@@ -1,0 +1,12 @@
+# 底盘参数化描述（契约 schema v1）—— 差速轮（迁移冒烟第二模型）
+# vy_max 置 0 即完成适配，算法代码零改动（方案书「迁移验证」）
+chassis:
+  type: diff                  # omni | mecanum | diff
+  footprint: { radius: 0.30 }
+  limits:
+    v_max: 1.0                # m/s
+    v_min: -1.0
+    vy_max: 0.0
+    omega_max: 1.5            # rad/s
+    acc_max: 1.0              # m/s²
+    alpha_max: 2.0            # rad/s²
