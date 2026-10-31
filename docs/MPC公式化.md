@@ -318,3 +318,13 @@ q = [ q_U ; ρ·1 ]               q_U = 2·Σ_k (M_k G_k)ᵀ Q_k·(M_k(F_k z₀ 
 | YAML 手工传路径 | 参数化底盘描述由插件 `declare_parameter` 读入 |
 
 移植原则：QP 数据装配顺序、权重语义、回退策略逐行对应，**不重排公式**。
+
+## 12. W3 换真 NavFn 参考（换源规格，2026-10-31 grill 定）
+
+参考机制不变（§2）：换的只是参考几何来源——`ReferencePath` 的 waypoints 由场景脚本折线替换为真 NavFn 全局路径输出，公式与推演循环不动。
+
+1. **取用形态**：最小 ROS 挂载。headless 起 `map_server + planner_server`（NavFn），原型以 rclpy 动作客户端调用一次 `ComputePathToPose` 取回折线，之后全 numpy 推演不变（不接 Isaac、不做常驻 ROS 闭环、不做离线预计算路径文件）。
+2. **地图生成**：与场景脚本同一份几何数据离线栅格化（防两套几何漂移），喂 `map_server`；分辨率 0.05 m、inflation 半径 0.35 m（底盘外缘 0.30 + 0.05 余量），S1~S3 共用一套规则；静态障碍进图，动态障碍永不进图（动态避让归 MPC 的 VO，NavFn 看不见行人）。
+3. **规划语义**：一次性规划——任务开始取一次路径，此后按 §2 绝对时间律推进、不重规划（中途换参考会与 e_long 吸收机制打架）；重规划语义留 W5~6 真 controller_server 行为树阶段解决。
+4. **验收**：§9 验收四条原样适用（真 NavFn 参考下 S1/S2/S3 全过）；①「一条命令跑通」具体化为一条拉起 `map_server + planner_server + 原型` 的脚本，退出码 0。
+5. **不动的部分**：S2/S3 动态障碍继续喂合成状态（决策「W4 打分口径」），W3 不接跟踪器；实现上在 `mpc_proto` 加取源适配模块，`ReferencePath` 接口不动。

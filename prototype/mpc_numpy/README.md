@@ -1,7 +1,9 @@
-# mpc_numpy —— W2 numpy 开环模拟原型
+# mpc_numpy —— numpy MPC 原型（W2 开环模拟 + W3 闭环第一刀）
 
-自包含滚动推演（不接 ROS/Isaac，闭环于完美运动学模型，障碍为场景脚本数据）。
-数学依据：[docs/MPC公式化.md](../../docs/MPC公式化.md)；W5~6 移植 C++ Nav2 插件（`mpc_controller`，见 [docs/Nav2插件教程笔记.md](../../docs/Nav2插件教程笔记.md)）。
+W2 开环模拟：自包含滚动推演（不接 ROS/Isaac，闭环于完美运动学模型，障碍为场景脚本数据）。
+W3 闭环第一刀：参考几何换为**真 NavFn 全局路径**（最小 ROS 挂载、一次性取路径后全 numpy 推演，
+docs/MPC公式化.md §12）。数学依据：[docs/MPC公式化.md](../../docs/MPC公式化.md)；
+W5~6 移植 C++ Nav2 插件（`mpc_controller`，见 [docs/Nav2插件教程笔记.md](../../docs/Nav2插件教程笔记.md)）。
 
 - [启动指令教程](#启动指令教程)
 - [验收四条](#验收四条每场景)
@@ -13,7 +15,10 @@
 ```
 prototype/mpc_numpy/
 ├── run_w2.sh            # W2 验收①：一条命令跑全部
-├── run_sim.py           # 场景入口 CLI（跑模拟 + 验收表 + 诊断图）
+├── run_w3.sh            # W3 验收①：一条命令（真 NavFn 参考）
+├── run_sim.py           # W2 场景入口 CLI（跑模拟 + 验收表 + 诊断图）
+├── run_w3.py            # W3 场景入口（取 NavFn 折线 → 换源 → sim.run 零改动）
+├── nav2_w3_params.yaml  # W3 planner_server + costmap（inflation 0.35）参数
 ├── sweep_horizon.py     # 预测时域 N 敏感性扫描
 ├── edt_sanity.py        # 非验收：栅格 EDT 梯度排雷
 ├── README.md
@@ -27,8 +32,10 @@ prototype/mpc_numpy/
 │   ├── scenarios.py     # S1/S2/S3 场景定义
 │   ├── sim.py           # 滚动推演引擎 + 验收计算
 │   ├── plotting.py      # 诊断图
-│   └── chassis.py       # 底盘 YAML 载入
-└── out/                 # 生成的诊断图（git 忽略）
+│   ├── chassis.py       # 底盘 YAML 载入
+│   ├── mapping.py       # W3：场景几何 → PGM+YAML 栅格化（动态障碍不进图）
+│   └── navfn_source.py  # W3：rclpy 取源 CLI（系统 Python 执行，禁止 import）
+└── out/                 # 生成物（git 忽略）：诊断图 + maps/ + w3_logs/
 ```
 
 ## 启动指令教程
@@ -49,7 +56,9 @@ PY=python
 ```
 
 ⚠️ 陷阱：`conda activate base` 或未激活时，`python3` 指向 base（3.13），会报
-`ModuleNotFoundError: osqp`。本原型不依赖 ROS 系统 Python，也不依赖 Isaac Sim。
+`ModuleNotFoundError: osqp`。W2 全程不依赖 ROS 系统 Python，也不依赖 Isaac Sim；
+W3 仅「取源壳」经系统 Python 3.10 调 rclpy（见下 W3 小节），**数值链路（MPC/QP/sim/验收/出图）
+100% 在 pro**（run_w2.sh / run_w3.sh 均硬编码 pro 解释器，数值永不离开 pro）。
 
 进入目录并验证依赖：
 
@@ -67,7 +76,30 @@ $PY -c "import numpy, scipy, osqp, matplotlib, yaml; print('env ok')"
 输出依次为：三场景验收表 → EDT sanity → `out/S{1,2,3}.png` 诊断图。
 退出码 0 ⟺ 三场景全部到达且验收②③④通过（`run_w2.sh` 内部已固定用 pro 的 python）。
 
-### 2. 分脚本指令
+### 2. 一条命令跑通（W3 验收①：真 NavFn 参考）
+
+前置（一次性，需 sudo）：`sudo apt-get update && sudo apt-get install -y ros-humble-navigation2`
+
+```bash
+./run_w3.sh
+```
+
+输出：地图栅格化自检 → 三场景 NavFn 路径摘要（M/L/端点误差）→ 验收表 → `out/S{1,2,3}.png`。
+退出码 0 ⟺ 真 NavFn 参考下三场景全部到达且验收②③④通过。
+
+**双 Python 分工**（这是刻意设计，不是偷懒）：
+
+| 环境 | 跑什么 | 为什么 |
+|---|---|---|
+| conda `pro`（3.11） | 地图栅格化、MPC/QP（osqp）、sim 推演、验收、出图 | W2 验证过的数值栈，零漂移 |
+| `/usr/bin/python3`（3.10） | `mpc_proto/navfn_source.py` 取源壳（零数学） | Humble rclpy 是 CPython 3.10 C 扩展，pro 3.11 ABI 不通（实测 `import rclpy` 必失败） |
+
+其他要点：`run_w3.sh` 会 `export ROS_DOMAIN_ID=42` 隔离本机 ROS 图——调试终端请
+`export ROS_DOMAIN_ID=42` 后再用 `ros2 node list` 等命令；规划栈（map_server +
+planner_server）由 `run_w3.py` **逐场景拉起/回收**（单栈 LoadMap 换图有 StaticLayer
+异步竞态，会串图，实测踩过）。
+
+### 3. 分脚本指令
 
 ```bash
 PY=/home/robot/miniconda3/envs/pro/bin/python   # 以下命令前先设好
@@ -95,7 +127,7 @@ $PY edt_sanity.py
 `max slack` 是障碍软约束松弛量（S3 窄通道 > 0 属软约束正常工作点）。
 诊断图为三联图：轨迹俯视（参考折线/机器人轨迹/障碍）、全程间隙时序、控制量（线速度+角速度分面）。
 
-### 3. 常见问题
+### 4. 常见问题
 
 | 现象 | 原因与处理 |
 |---|---|
@@ -104,17 +136,23 @@ $PY edt_sanity.py
 | 找不到 `mpc_proto` 模块 | 必须在 `prototype/mpc_numpy/` 目录下运行脚本（脚本已把自身目录插进 `sys.path`） |
 | 验收② FAIL（解算 fail > 0） | OSQP 未收敛——看日志里的回退记录；连续 5 拍失败会报警（不切第二控制器） |
 | 验收③ FAIL（间隙 ≤ 0） | 穿模——检查场景坐标/权重，见 docs/MPC公式化.md §4、§9 |
+| `run_w3.sh` 报「Nav2 未安装」 | 执行前置安装：`sudo apt-get install -y ros-humble-navigation2` |
+| `run_w3.py` 报「找不到 ros2」 | 必须经 `run_w3.sh` 运行（它负责 source ROS 环境） |
+| `fetcher 无 JSON 输出: No module named 'rclpy'` | 取源壳被 conda python 执行了——它必须走 `/usr/bin/python3`（run_w3.py 默认即此） |
+| get-path 报「路径点数不足」并自动重试 | 换图后 costmap 异步加载竞态，正常自愈；持续失败查 `out/w3_logs/*_planner.log` |
+| `ros2 lifecycle set` 报 Unknown transition | 有上一次残留的同名节点——`pgrep -af nav2_w3_params` 找到后按 PID kill |
 
 ## 验收四条（每场景）
 
 | # | 判据 | 口径 |
 |---|---|---|
-| ① | 一条命令跑通 | `./run_w2.sh` 退出码 0 |
+| ① | 一条命令跑通 | W2：`./run_w2.sh`；W3：`./run_w3.sh`。退出码 0 |
 | ② | 逐步求解成功 | 每控制拍 OSQP `solved`，零速回退 = 0 |
 | ③ | 推演全程间隙 > 0 | 外缘间隙（真值几何）全程 > 0 |
 | ④ | Δu 总变差有界 | TV/拍 < 0.30（归一化控制量总变差） |
 
-到达判定复用指标定义 0.25 m / 0.25 rad。
+到达判定复用指标定义 0.25 m / 0.25 rad。W3 复用同四条，仅参考几何换真 NavFn 输出
+（docs/MPC公式化.md §12「验收四条原样适用」）。
 
 ## 代码文件详解
 
@@ -150,6 +188,53 @@ W2 验收①的「一条命令」。`set -euo pipefail` 保证任何一步失败
 - 梯度方向：EDT 有限差分梯度 vs 解析径向（环带 cos∠ P5 > 0.9）
 
 sanity 口径，不进 W2 验收四条。
+
+### `run_w3.sh` —— W3 验收入口
+
+W3 验收①的「一条命令」。环境检查（pro python / ROS / Nav2）→ 三场景地图栅格化
+→ 静态 TF `map→base_link`（三场景起点均为原点）→ `run_w3.py --all --quiet`；
+`trap` 清理全部节点。`export ROS_DOMAIN_ID=42` 隔离本机 ROS 图。
+
+### `run_w3.py` —— W3 场景入口（换源编排）
+
+| 函数 | 作用 |
+|---|---|
+| `bringup(map_yaml, ...)` | 逐场景拉起 map_server + planner_server（独立进程组；节点日志在 `out/w3_logs/`） |
+| `lifecycle_activate()` | `ros2 lifecycle set` configure→activate（带重试） |
+| `teardown(procs)` | killpg 收整组进程（`ros2 run` 的节点子进程不再成孤儿） |
+| `fetch_json(...)` | subprocess 调取源壳，解析 stdout 末行 JSON |
+| `main()` | 逐场景：bringup → 取折线（空路径有界重试 ×5）→ **`dataclasses.replace(sc, waypoints=折线)`** → `sim.run()`（零改动）→ 验收表 |
+
+换源点就是 `dataclasses.replace` 一行：`ReferencePath`/`sim.run`/验收逻辑与 W2 完全共用。
+取到折线即收 ROS 栈，推演阶段纯 numpy。
+
+### `mpc_proto/mapping.py` —— 场景地图栅格化
+
+| 符号 | 作用 |
+|---|---|
+| `scenario_bounds(sc)` | 起点/目标/静态圆盘 ±r 的 bbox 外扩 1.5 m（动态障碍不进 bounds） |
+| `build_grid(sc)` | 0.05 m 栅格；**只画静态障碍**（`not o.dynamic`）；PGM 行序（row 0 = y_max） |
+| `write_map/write_all` | 写 `out/maps/<名>/<名>.{pgm,yaml}`（map_server trinary 格式） |
+| `self_check(out_dir)` | 写盘回读验证：静障占据/起点目标自由/动态障碍未进图/S2 全自由 |
+
+与解析距离场同源（同一份 `Scenario.obstacles`），防两套几何漂移。
+
+### `mpc_proto/navfn_source.py` —— NavFn 取源壳（系统 Python 3.10 执行）
+
+| 子命令 | 作用 |
+|---|---|
+| `load-map --yaml <abs>` | 调 `nav2_msgs/srv/LoadMap` 切换地图（调试用；W3 编排已改逐场景重启） |
+| `get-path --start x y yaw --goal x y yaw` | 一次 `ComputePathToPose`（`use_start` 显式起点），stdout 出 `{"status","waypoints","length"}` |
+
+约定：stdout 只出一行 JSON、日志走 stderr、成功 exit 0 / 失败 exit 2。
+**禁止被 conda 侧 import**（那边无 rclpy）；`run_w3.py` 以 `/usr/bin/python3` 调它。
+
+### `nav2_w3_params.yaml` —— W3 规划栈参数
+
+`planner_server`（NavfnPlanner，`tolerance: 0.0` 精确到目标，Dijkstra）+
+`global_costmap`（仅 static_layer + inflation_layer，`robot_radius 0.30` /
+`inflation_radius 0.35` = 外缘 0.30 + 0.05，**无 obstacle_layer**——动态障碍永不进图）。
+map_server 的 `yaml_filename` 由命令行注入。
 
 ### `mpc_proto/mpc.py` —— QP 装配与求解（核心）
 
@@ -244,3 +329,9 @@ sanity 口径，不进 W2 验收四条。
 - 直参考穿障不采用：q_long ≤ 0.1·q_lat 下横向代价压过沿程收益（宁可迟到不可贴障），
   静态绕行几何归全局规划——与 ADR-0001 分工一致。
 - OSQP 失败 → 零速 + 日志，连续 5 拍报警，不切第二控制器。
+- W3 换源只换参考几何来源（场景 waypoints → 真 NavFn 折线），公式与推演零改动——
+  实证：S2 直线参考下 W3 数字与 W2 逐位一致（13.00 s / 0.204 m / 0.025）。
+- W3 规划栈逐场景重启，不用 LoadMap 单栈换图：StaticLayer 异步加载有竞态，会串图
+  （旧图上规划出非空错路，实测 S2 串到 S1 的绕障路径）。
+- 取路径口径：一次性（不重规划、不平滑、不抽稀）；空路径有界重试 ×5 兜加载竞态；
+  端点距目标 > 0.15 m 时补目标 waypoint（§12 编排回退）。
