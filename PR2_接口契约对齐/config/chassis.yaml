@@ -1,0 +1,16 @@
+# 工程侧 v1.1 提案：任务限值不代表已测硬件能力；几何仍为底盘本体假设。
+chassis:
+  type: omni
+  footprint:
+    polygon: [[0.3215, 0.088622], [0.082122, 0.328], [-0.082122, 0.328], [-0.3215, 0.088622], [-0.3215, -0.088622], [-0.082122, -0.328], [0.082122, -0.328], [0.3215, -0.088622]]
+  limits: {v_max: 1.0, v_min: -1.0, vy_max: 1.0, omega_max: 1.5, acc_max: 1.0, alpha_max: 2.0}
+  capabilities: {vx_max: 2.0, vy_max: 2.0, acc_max: null, alpha_max: null}
+  wheels:
+    radius_m: 0.105
+    centers_m: {fl: [0.23546, 0.23546], fr: [0.23546, -0.23546], rl: [-0.23546, 0.23546], rr: [-0.23546, -0.23546]}
+    axis_deg: {fl: 45.0, fr: -45.0, rl: 135.0, rr: 225.0}
+    ik: "omega_i = (sin(phi_i)*(vx-wz*y_i) - cos(phi_i)*(vy+wz*x_i))/radius_m"
+  sensors:
+    lidar_front: {frame: lidar_front_link, parent: base_link, xyz_m: [0.13, 0.13, 0.2185], rpy_rad: [0, 0, 0]}
+    lidar_rear: {frame: lidar_rear_link, parent: base_link, xyz_m: [-0.13, -0.13, 0.2185], rpy_rad: [0, 0, 3.141592653589793], simulated: false}
+    imu: {frame: imu_link, parent: lidar_front_link, xyz_m: [0, 0, 0]}

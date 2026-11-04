@@ -1,0 +1,35 @@
+# 仿真运行约定（W1 从 E01/E02 实测结果固化，见 docs/engineering/environment.md、docs/engineering/bridge_check.md）
+
+isaac_sim:
+  version: "5.1.0"
+  launch_gui_env: ISAAC_SIM_LAUNCHER
+  python_env: ISAAC_PYTHON   # 仿真侧，仅 3.11
+  logs: ~/.nvidia-omniverse/logs/Kit/Isaac-Sim Full/5.1/
+  startup_timeout_s: 240        # 冷启动实测可达 111 s，别用 60 s
+
+ros2_bridge:
+  extension: isaacsim.ros2.bridge      # 5.1 的正式名，不是 omni.isaac.ros2_bridge
+  extension_version: "4.12.4"
+  ros_distro_setting: system_default   # 必须 source /opt/ros/humble
+  publish_without_verification: false  # 无订阅者不发布，判“有没有数据”前先起订阅
+  # 仿真进程里不要 import rclpy（系统 rclpy 是 3.10 绑定），发消息只用动作图节点
+
+dds:
+  rmw_implementation: rmw_fastrtps_cpp
+  ros_domain_id: 42            # 基准实验固定域；两侧必须一致
+  ros_localhost_only: 0        # 单机场景可设 1 以缩小发现范围
+
+clock:
+  topic: /clock
+  # 每渲染帧发布一次，实测 59.9~60.0 Hz；不要假定固定频率
+  observed_hz: 60
+  # 场景重置语义（E02 实测）：
+  #   IsaacReadSimulationTime.resetOnStop=false -> 时钟单调，不回跳
+  #   IsaacReadSimulationTime.resetOnStop=true  -> 重新播放后从 0 开始（基准实验采用）
+  reset_semantics_for_benchmark: reset_on_stop_true
+  # 注意：timeline.get_current_time() 在 stop() 后一定读 0，不能代表 /clock
+
+realtime:
+  target_rtf_for_benchmark: 1.0   # 不限速时空场景可跑到 5~6 倍实时，必须显式限速
+  gpu_memory_total_mib: 8151      # 单实例限制，见 docs/engineering/environment.md 第 3 节
+  max_concurrent_instances: 1
