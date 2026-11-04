@@ -1,0 +1,65 @@
+== 1. 资产完整性 ==
+[PASS] assets/MANIFEST.sha256 — 全部 72 个文件
+
+== 2. 依赖 ==
+[PASS] 依赖检查 — 必需依赖齐全
+
+== 3. 构建 ==
+[PASS] colcon build --symlink-install — 8 packages finished
+
+== 4. 包可见性与接口自检（系统 python3 + 已 source 的安装空间）==
+[PASS] 八个包可见 — robot_description robot_sim robot_bringup robot_navigation robot_benchmark robot_safety robot_mpc robot_a_sim_control
+[PASS] 契约数据结构可用 — 七项指标键 + Scenario/RunResult 序列化
+[PASS] 未实现接口必须显式失败 — run 退出码 2 + 明确未实现提示
+[PASS] 顶层 launch 可解析 — use_sim_time / controller / use_rviz
+
+== 5. E08 传感器接入 ==
+[PASS] docs/sensors.md — 含实测频率、丢帧结论、已知限制
+[PASS] 传感器配置 — src/robot_sim/config/sensors.yaml（含实测值 + 帧名与 URDF 一致）
+[PASS] GUI 验证入口 — scripts/e08_gui_sensors.py（含 --headless-test 冒烟）
+[PASS] E08 证据文件 — 17 项（含 RViz 截图与 bag 分析）
+[PASS] 点云频率自洽 — 实测 10.02 Hz / 重复倍数 1.00×（非重复发布、无掉帧）
+
+== 6. E09/E10 TF 树与统一启动 ==
+[PASS] docs/tf_tree.md — 父子帧/发布者/参考系/重置行为/互斥表齐备
+[PASS] TF 树配置 — src/robot_sim/config/tf_tree.yaml（含互斥规则）
+[PASS] TF/里程计节点可执行 — truth_odom_node.py + map_odom_static_node.py
+[PASS] W3 证据（E09/E10） — 节点单测 + 集成验证 + M1 检查 + RViz 截图
+[PASS] E09/E10 验证结论 — 三份报告均 PASS（/odom 实测 **60.00 Hz）
+[PASS] E10 一条命令可解析 — simulation.launch.py 有 sim/rviz/demo/truth/mode 参数
+
+== 7. E14 五类场景与实例清单 ==
+[PASS] 五类场景配置 + 冻结实例清单 — 5 份模板 / 100 个实例
+[PASS] 场景实例校验（确定性+有效性） — 全部通过：100 个实例，5 个场景
+[PASS] 场景生成器单元测试 — 9 passed in 4.47s
+
+== 8. 文档要点 ==
+[PASS] W1/W2 文档齐全 — 17 份
+[PASS] 契约含待确认与签认区 — E04 要求互审记录
+
+================ 验收结果 ================
+[PASS] assets/MANIFEST.sha256 — 全部 72 个文件
+[PASS] 依赖检查 — 必需依赖齐全
+[PASS] colcon build --symlink-install — 8 packages finished
+[PASS] 八个包可见 — robot_description robot_sim robot_bringup robot_navigation robot_benchmark robot_safety robot_mpc robot_a_sim_control
+[PASS] 契约数据结构可用 — 七项指标键 + Scenario/RunResult 序列化
+[PASS] 未实现接口必须显式失败 — run 退出码 2 + 明确未实现提示
+[PASS] 顶层 launch 可解析 — use_sim_time / controller / use_rviz
+[PASS] docs/sensors.md — 含实测频率、丢帧结论、已知限制
+[PASS] 传感器配置 — src/robot_sim/config/sensors.yaml（含实测值 + 帧名与 URDF 一致）
+[PASS] GUI 验证入口 — scripts/e08_gui_sensors.py（含 --headless-test 冒烟）
+[PASS] E08 证据文件 — 17 项（含 RViz 截图与 bag 分析）
+[PASS] 点云频率自洽 — 实测 10.02 Hz / 重复倍数 1.00×（非重复发布、无掉帧）
+[PASS] docs/tf_tree.md — 父子帧/发布者/参考系/重置行为/互斥表齐备
+[PASS] TF 树配置 — src/robot_sim/config/tf_tree.yaml（含互斥规则）
+[PASS] TF/里程计节点可执行 — truth_odom_node.py + map_odom_static_node.py
+[PASS] W3 证据（E09/E10） — 节点单测 + 集成验证 + M1 检查 + RViz 截图
+[PASS] E09/E10 验证结论 — 三份报告均 PASS（/odom 实测 **60.00 Hz）
+[PASS] E10 一条命令可解析 — simulation.launch.py 有 sim/rviz/demo/truth/mode 参数
+[PASS] 五类场景配置 + 冻结实例清单 — 5 份模板 / 100 个实例
+[PASS] 场景实例校验（确定性+有效性） — 全部通过：100 个实例，5 个场景
+[PASS] 场景生成器单元测试 — 9 passed in 4.47s
+[PASS] W1/W2 文档齐全 — 17 份
+[PASS] 契约含待确认与签认区 — E04 要求互审记录
+------------------------------------------
+PASS=23 FAIL=0

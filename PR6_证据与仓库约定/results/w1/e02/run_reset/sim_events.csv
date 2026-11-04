@@ -1,0 +1,15 @@
+wall_epoch,wall_s,sim_time_s,timeline_state,event,detail
+1793329163.982484,8.3793,0.0,stopped,harness_ready,reset_on_stop=True
+1793329163.982572,8.3793,0.0,stopped,play_start,phase0_awating_trigger
+1793329179.06315,23.4599,14.933334,playing,trigger_state,triggered=True
+1793329179.063418,23.4602,14.933334,playing,play_start,phase1
+1793329191.079836,35.4766,26.900001,playing,play_done,phase1
+1793329191.080015,35.4768,26.900001,playing,pause_start,phase2
+1793329196.080796,40.4776,26.900001,stopped,pause_end,phase2
+1793329196.080967,40.4777,26.900001,stopped,resume_start,phase3
+1793329202.089744,46.4865,32.883335,playing,resume_done,phase3
+1793329202.089939,46.4867,32.883335,playing,stop_start,phase4
+1793329204.0908,48.4876,0.0,stopped,stop_end,phase4
+1793329204.090927,48.4877,0.0,stopped,replay_start,phase4
+1793329209.101901,53.4987,4.933334,playing,replay_done,phase4
+1793329209.125365,53.5221,4.933334,playing,harness_end,ok

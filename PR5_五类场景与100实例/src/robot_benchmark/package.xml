@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>robot_benchmark</name>
+  <version>0.1.0</version>
+  <description>基准系统：场景编排、自动执行、七项指标采集与结果汇总。W1 只定义契约（数据结构/状态/异常语义），实现在 E14–E16。</description>
+  <maintainer email="member3@example.com">engineering (member 3)</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav2_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+  <exec_depend>python3-yaml</exec_depend>
+</package>
