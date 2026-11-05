@@ -1,0 +1,929 @@
+scenario: static_avoid
+generator_version: 1.0.0
+asset_version: '2026-11-03'
+map_version: e05_min_scene@2026-11-01
+runs: 20
+seed_rule: seed = 场景序(1~5)×100 + run 序(1~20)
+instances:
+- scenario_id: static_avoid_01
+  scenario: static_avoid
+  run_index: 1
+  seed: 101
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 10.081
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 5.278
+    y: -0.422
+    r: 0.573
+  - type: circle
+    x: 8.208
+    y: -0.146
+    r: 0.481
+  - type: circle
+    x: 3.647
+    y: -0.994
+    r: 0.431
+  - type: circle
+    x: 7.349
+    y: -0.83
+    r: 0.357
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: &id001
+    pos_m: 0.25
+    yaw_rad: 0.25
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_02
+  scenario: static_avoid
+  run_index: 2
+  seed: 102
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 9.648
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 5.218
+    y: 0.358
+    r: 0.407
+  - type: circle
+    x: 5.6
+    y: 0.821
+    r: 0.429
+  - type: circle
+    x: 3.104
+    y: 0.879
+    r: 0.565
+  - type: circle
+    x: 2.37
+    y: -0.71
+    r: 0.325
+  - type: circle
+    x: 6.386
+    y: 0.024
+    r: 0.551
+  - type: circle
+    x: 2.618
+    y: 0.26
+    r: 0.444
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_03
+  scenario: static_avoid
+  run_index: 3
+  seed: 103
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 10.479
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 6.974
+    y: 1.202
+    r: 0.58
+  - type: circle
+    x: 6.469
+    y: -0.011
+    r: 0.522
+  - type: circle
+    x: 3.206
+    y: -0.024
+    r: 0.447
+  - type: circle
+    x: 6.702
+    y: 0.469
+    r: 0.589
+  - type: circle
+    x: 5.889
+    y: 0.613
+    r: 0.558
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_04
+  scenario: static_avoid
+  run_index: 4
+  seed: 104
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 10.46
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 3.713
+    y: -0.324
+    r: 0.52
+  - type: circle
+    x: 2.931
+    y: 1.279
+    r: 0.305
+  - type: circle
+    x: 6.542
+    y: 1.022
+    r: 0.399
+  - type: circle
+    x: 6.271
+    y: 0.365
+    r: 0.397
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_05
+  scenario: static_avoid
+  run_index: 5
+  seed: 105
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 10.378
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 2.76
+    y: -1.452
+    r: 0.474
+  - type: circle
+    x: 8.079
+    y: -1.243
+    r: 0.388
+  - type: circle
+    x: 8.473
+    y: 1.238
+    r: 0.419
+  - type: circle
+    x: 8.121
+    y: 0.34
+    r: 0.449
+  - type: circle
+    x: 8.542
+    y: 1.206
+    r: 0.393
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_06
+  scenario: static_avoid
+  run_index: 6
+  seed: 106
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 10.211
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 8.056
+    y: 1.147
+    r: 0.305
+  - type: circle
+    x: 3.178
+    y: 1.385
+    r: 0.541
+  - type: circle
+    x: 6.499
+    y: 0.73
+    r: 0.496
+  - type: circle
+    x: 3.589
+    y: -0.119
+    r: 0.341
+  - type: circle
+    x: 2.922
+    y: -0.057
+    r: 0.545
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_07
+  scenario: static_avoid
+  run_index: 7
+  seed: 107
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 9.746
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 6.7
+    y: 0.05
+    r: 0.53
+  - type: circle
+    x: 5.275
+    y: -1.407
+    r: 0.427
+  - type: circle
+    x: 7.595
+    y: 1.28
+    r: 0.498
+  - type: circle
+    x: 2.804
+    y: -0.128
+    r: 0.358
+  - type: circle
+    x: 2.37
+    y: -1.184
+    r: 0.587
+  - type: circle
+    x: 4.456
+    y: 0.853
+    r: 0.382
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_08
+  scenario: static_avoid
+  run_index: 8
+  seed: 108
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 9.631
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 4.178
+    y: -0.922
+    r: 0.564
+  - type: circle
+    x: 3.053
+    y: 0.876
+    r: 0.364
+  - type: circle
+    x: 7.516
+    y: -0.9
+    r: 0.578
+  - type: circle
+    x: 5.936
+    y: 0.308
+    r: 0.417
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_09
+  scenario: static_avoid
+  run_index: 9
+  seed: 109
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 9.78
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 2.362
+    y: -0.938
+    r: 0.435
+  - type: circle
+    x: 2.494
+    y: -0.837
+    r: 0.575
+  - type: circle
+    x: 7.866
+    y: -0.348
+    r: 0.5
+  - type: circle
+    x: 4.984
+    y: 0.288
+    r: 0.395
+  - type: circle
+    x: 5.701
+    y: -0.863
+    r: 0.361
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_10
+  scenario: static_avoid
+  run_index: 10
+  seed: 110
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 10.434
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 6.29
+    y: -0.183
+    r: 0.538
+  - type: circle
+    x: 5.922
+    y: -0.227
+    r: 0.507
+  - type: circle
+    x: 2.269
+    y: 0.061
+    r: 0.454
+  - type: circle
+    x: 7.372
+    y: -0.888
+    r: 0.585
+  - type: circle
+    x: 5.048
+    y: 0.039
+    r: 0.332
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_11
+  scenario: static_avoid
+  run_index: 11
+  seed: 111
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 10.327
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 4.107
+    y: -0.73
+    r: 0.576
+  - type: circle
+    x: 6.575
+    y: 0.155
+    r: 0.489
+  - type: circle
+    x: 7.062
+    y: -0.231
+    r: 0.546
+  - type: circle
+    x: 5.52
+    y: -1.292
+    r: 0.532
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_12
+  scenario: static_avoid
+  run_index: 12
+  seed: 112
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 9.981
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 3.89
+    y: -0.007
+    r: 0.474
+  - type: circle
+    x: 5.468
+    y: -1.577
+    r: 0.409
+  - type: circle
+    x: 3.843
+    y: -0.81
+    r: 0.437
+  - type: circle
+    x: 6.783
+    y: 0.001
+    r: 0.506
+  - type: circle
+    x: 2.383
+    y: -0.661
+    r: 0.306
+  - type: circle
+    x: 7.971
+    y: 1.248
+    r: 0.326
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_13
+  scenario: static_avoid
+  run_index: 13
+  seed: 113
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 9.531
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 4.847
+    y: -0.738
+    r: 0.382
+  - type: circle
+    x: 3.033
+    y: -0.724
+    r: 0.32
+  - type: circle
+    x: 3.056
+    y: -0.136
+    r: 0.402
+  - type: circle
+    x: 2.878
+    y: 0.213
+    r: 0.456
+  - type: circle
+    x: 4.892
+    y: -0.562
+    r: 0.448
+  - type: circle
+    x: 1.817
+    y: -0.122
+    r: 0.358
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_14
+  scenario: static_avoid
+  run_index: 14
+  seed: 114
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 9.741
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 7.738
+    y: 0.39
+    r: 0.401
+  - type: circle
+    x: 5.251
+    y: 0.416
+    r: 0.459
+  - type: circle
+    x: 6.162
+    y: 1.172
+    r: 0.412
+  - type: circle
+    x: 5.755
+    y: 1.502
+    r: 0.419
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_15
+  scenario: static_avoid
+  run_index: 15
+  seed: 115
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 10.396
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 5.929
+    y: -0.467
+    r: 0.533
+  - type: circle
+    x: 8.227
+    y: -0.91
+    r: 0.388
+  - type: circle
+    x: 3.252
+    y: -0.842
+    r: 0.465
+  - type: circle
+    x: 8.131
+    y: -0.981
+    r: 0.446
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_16
+  scenario: static_avoid
+  run_index: 16
+  seed: 116
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 10.321
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 3.806
+    y: 0.538
+    r: 0.464
+  - type: circle
+    x: 8.749
+    y: -0.723
+    r: 0.59
+  - type: circle
+    x: 2.771
+    y: -1.299
+    r: 0.58
+  - type: circle
+    x: 8.346
+    y: 0.87
+    r: 0.449
+  - type: circle
+    x: 5.714
+    y: -1.047
+    r: 0.351
+  - type: circle
+    x: 6.148
+    y: 0.32
+    r: 0.487
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_17
+  scenario: static_avoid
+  run_index: 17
+  seed: 117
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 9.74
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 7.382
+    y: 0.305
+    r: 0.363
+  - type: circle
+    x: 4.159
+    y: -0.353
+    r: 0.584
+  - type: circle
+    x: 2.503
+    y: -0.243
+    r: 0.412
+  - type: circle
+    x: 4.796
+    y: -0.703
+    r: 0.348
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_18
+  scenario: static_avoid
+  run_index: 18
+  seed: 118
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 10.211
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 6.426
+    y: -0.719
+    r: 0.394
+  - type: circle
+    x: 5.221
+    y: 1.584
+    r: 0.308
+  - type: circle
+    x: 6.121
+    y: 0.911
+    r: 0.344
+  - type: circle
+    x: 7.644
+    y: 1.01
+    r: 0.469
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_19
+  scenario: static_avoid
+  run_index: 19
+  seed: 119
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 10.426
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 8.605
+    y: 0.649
+    r: 0.522
+  - type: circle
+    x: 8.107
+    y: 0.199
+    r: 0.333
+  - type: circle
+    x: 3.64
+    y: 0.037
+    r: 0.582
+  - type: circle
+    x: 7.29
+    y: -1.492
+    r: 0.563
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: static_avoid_20
+  scenario: static_avoid
+  run_index: 20
+  seed: 120
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 10.015
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 7.935
+    y: 0.679
+    r: 0.584
+  - type: circle
+    x: 3.527
+    y: 0.998
+    r: 0.395
+  - type: circle
+    x: 2.589
+    y: 0.386
+    r: 0.348
+  - type: circle
+    x: 3.386
+    y: 1.182
+    r: 0.387
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0

@@ -1,0 +1,21 @@
+# 场景模板：混合场景 mixed（E14 / 5场景需求清单.md）
+scenario: mixed
+description: 直线 12±1 m，静态障碍 4~6 个 + 动态行人 2 个
+asset_version: "2026-11-03"
+map_version: "e05_min_scene@2026-11-01"
+timeout_s: 75                       # 需求：mixed 75 s
+goal_tolerance: {pos_m: 0.25, yaw_rad: 0.25}
+
+corridor_length_m: [11.0, 13.0]
+corridor_half_width_m: 3.0
+obstacle_count: [4, 6]
+obstacle_radius_m: [0.30, 0.60]
+lateral_offset_m: 1.5
+obstacle_x_range_m: [2.0, 2.0]
+pedestrian_count: [2, 2]
+pedestrian_radius_m: 0.30
+pedestrian_speed_mps: [0.6, 1.0]
+cross_half_span_m: 3.0
+cross_x_jitter_m: 2.0
+encounter_time_s: 9.0
+encounter_jitter_s: 2.0

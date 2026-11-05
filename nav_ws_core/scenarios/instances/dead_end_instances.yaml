@@ -1,0 +1,889 @@
+scenario: dead_end
+generator_version: 1.0.0
+asset_version: '2026-11-03'
+map_version: e05_min_scene@2026-11-01
+runs: 20
+seed_rule: seed = 场景序(1~5)×100 + run 序(1~20)
+instances:
+- scenario_id: dead_end_01
+  scenario: dead_end
+  run_index: 1
+  seed: 401
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.8
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.8
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.8
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: &id001
+    pos_m: 0.25
+    yaw_rad: 0.25
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.4
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_02
+  scenario: dead_end
+  run_index: 2
+  seed: 402
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.832
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.832
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.864
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.464
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_03
+  scenario: dead_end
+  run_index: 3
+  seed: 403
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.775
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.775
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.75
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.35
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_04
+  scenario: dead_end
+  run_index: 4
+  seed: 404
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.759
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.759
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.717
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.317
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_05
+  scenario: dead_end
+  run_index: 5
+  seed: 405
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.754
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.754
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.709
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.309
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_06
+  scenario: dead_end
+  run_index: 6
+  seed: 406
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.792
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.792
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.784
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.384
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_07
+  scenario: dead_end
+  run_index: 7
+  seed: 407
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.816
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.816
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.832
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.432
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_08
+  scenario: dead_end
+  run_index: 8
+  seed: 408
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.83
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.83
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.86
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.46
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_09
+  scenario: dead_end
+  run_index: 9
+  seed: 409
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.833
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.833
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.865
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.465
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_10
+  scenario: dead_end
+  run_index: 10
+  seed: 410
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.765
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.765
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.729
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.329
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_11
+  scenario: dead_end
+  run_index: 11
+  seed: 411
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.772
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.772
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.743
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.343
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_12
+  scenario: dead_end
+  run_index: 12
+  seed: 412
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.779
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.779
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.757
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.357
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_13
+  scenario: dead_end
+  run_index: 13
+  seed: 413
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.832
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.832
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.864
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.464
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_14
+  scenario: dead_end
+  run_index: 14
+  seed: 414
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.792
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.792
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.784
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.384
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_15
+  scenario: dead_end
+  run_index: 15
+  seed: 415
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.828
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.828
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.855
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.455
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_16
+  scenario: dead_end
+  run_index: 16
+  seed: 416
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.775
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.775
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.751
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.351
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_17
+  scenario: dead_end
+  run_index: 17
+  seed: 417
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.843
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.843
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.886
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.486
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_18
+  scenario: dead_end
+  run_index: 18
+  seed: 418
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.782
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.782
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.765
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.365
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_19
+  scenario: dead_end
+  run_index: 19
+  seed: 419
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.812
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.812
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.825
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.425
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: dead_end_20
+  scenario: dead_end
+  run_index: 20
+  seed: 420
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 7.4
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: box
+    x: 7.0
+    y: 0.753
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 7.0
+    y: -0.753
+    w: 2.0
+    h: 0.2
+  - type: box
+    x: 8.1
+    y: 0.0
+    w: 0.2
+    h: 1.705
+  dynamic: []
+  timeout_s: 60
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: true
+  passage: null
+  dead_end:
+    mouth_width_m: 1.305
+    depth_m: 2.0
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
