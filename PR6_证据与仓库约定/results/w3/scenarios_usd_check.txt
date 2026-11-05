@@ -1,5 +1,0 @@
-dead_end_01.usd                圆柱障碍= 7 墙体=3 行人=0 碰撞体=11 机器人+目标=True 大小=5.7KB
-dynamic_pedestrian_01.usd      圆柱障碍= 6 墙体=0 行人=4 碰撞体=11 机器人+目标=True 大小=5.6KB
-mixed_01.usd                   圆柱障碍=15 墙体=1 行人=3 碰撞体=20 机器人+目标=True 大小=6.3KB
-narrow_passage_01.usd          圆柱障碍= 6 墙体=2 行人=0 碰撞体= 9 机器人+目标=True 大小=5.5KB
-static_avoid_01.usd            圆柱障碍=17 墙体=0 行人=0 碰撞体=18 机器人+目标=True 大小=6.0KB

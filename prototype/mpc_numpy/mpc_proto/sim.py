@@ -4,6 +4,7 @@
 """
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -38,6 +39,7 @@ class RunResult:
     us: np.ndarray = field(default_factory=lambda: np.zeros((0, 3)))
     t_ctrl: np.ndarray = field(default_factory=lambda: np.zeros(0))
     clearances: np.ndarray = field(default_factory=lambda: np.zeros(0))  # 仿真细步间隙
+    qp_ms: np.ndarray = field(default_factory=lambda: np.zeros(0))  # 逐拍求解耗时 ms（solve 外环）
 
     def acceptance(self) -> dict:
         """验收四条（②③④；①一条命令由 run_w2.sh 保证）。"""
@@ -74,6 +76,7 @@ def run(
 
     zs, us, t_ctrl = [], [], []
     clearances = []  # 细步真值间隙
+    qp_ms = []  # 逐拍求解耗时（契约「评测记录 schema」计时口径：solve 外环）
     solve_ok = solve_fail = 0
     max_slack = 0.0
     arrived = False
@@ -84,11 +87,19 @@ def run(
     n_ticks = int(round(scenario.t_max / dt_ctrl))
     for tick in range(n_ticks):
         t = tick * dt_ctrl
-        # 障碍状态（场景脚本数据，t 时刻）
-        obs_now = [
-            Obstacle(o.obs_id, o.center_at(t), o.v, o.radius) for o in scenario.obstacles
-        ]
+        # 障碍状态（场景脚本数据，t 时刻）；消融开关只改控制器输入，真值裁判仍用全量几何
+        obs_now = []
+        for o in scenario.obstacles:
+            if o.dynamic and not cfg.vo:
+                # vo=False：动态障碍不作匀速预测，按当前位置当静态处理
+                obs_now.append(Obstacle(o.obs_id, o.center_at(t), np.zeros(2), o.radius))
+            elif not o.dynamic and not cfg.esdf:
+                continue  # esdf=False：静态障碍不进 QP 约束
+            else:
+                obs_now.append(Obstacle(o.obs_id, o.center_at(t), o.v, o.radius))
+        t0 = time.perf_counter()
         res = solver.solve(z, obs_now, ref, t_now=t)
+        qp_ms.append((time.perf_counter() - t0) * 1e3)
         if res.success:
             solve_ok += 1
             max_slack = max(max_slack, res.max_slack)
@@ -159,4 +170,5 @@ def run(
         us=us_arr,
         t_ctrl=np.asarray(t_ctrl),
         clearances=np.asarray(clearances),
+        qp_ms=np.asarray(qp_ms),
     )

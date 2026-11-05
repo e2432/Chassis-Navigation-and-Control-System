@@ -38,11 +38,18 @@ class MPCConfig:
     eps_abs: float = 1e-4
     eps_rel: float = 1e-4
     max_iter: int = 4000
+    # 消融开关（契约「评测记录 schema」，原型与 C++ 插件同语义）
+    vo: bool = True  # False → 动态障碍不作匀速预测，按当前位置当静态
+    esdf: bool = True  # False → 静态障碍不进 QP 约束
+    slack: bool = True  # False → 障碍约束转硬约束
+    terminal: bool = True  # False → 终端代价置 0
 
     def Q_stage(self) -> np.ndarray:
         return np.diag([self.q_lat, self.q_long, self.q_theta])
 
     def Q_terminal(self) -> np.ndarray:
+        if not self.terminal:
+            return np.zeros((3, 3))
         return self.terminal_factor * self.Q_stage()
 
     def R(self) -> np.ndarray:
@@ -176,7 +183,7 @@ class MPCSolver:
         N, dt = cfg.N, cfg.dt
         n_obs = len(obstacles)
         n_u = 3 * N
-        n_s = N * n_obs  # 障碍软约束 slack：k=1..N × j
+        n_s = N * n_obs if cfg.slack else 0  # slack 消融关闭时无 slack 变量 → 硬约束
         nx = n_u + n_s
 
         # 1) LTV 递推 → z_k = Xi_k U + xi_k（k=0..N）
@@ -270,7 +277,8 @@ class MPCSolver:
                 rhs = cfg.d_safe - cl.d + float(g @ (p_hat - xi[k, :2]))
                 row = np.zeros(nx)
                 row[:n_u] = g @ Xi[k, :2, :]
-                row[n_u + (k - 1) * n_obs + j] = 1.0
+                if n_s:
+                    row[n_u + (k - 1) * n_obs + j] = 1.0
                 rows.append(row)
                 lb.append(rhs)
                 ub.append(np.inf)

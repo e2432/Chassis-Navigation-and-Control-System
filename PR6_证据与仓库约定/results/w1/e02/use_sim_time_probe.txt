@@ -1,2 +1,0 @@
-use_sim_time=False  node_ros_time=1793329276.323050  wall_epoch=1793329276.323071  diff=-0.000  (Unix 墙上时间)
-use_sim_time=True   node_ros_time=0.000000  wall_epoch=1793329278.338593  diff=-1793329278.339  (非墙上时间（来自 /clock）)

@@ -1,9 +1,0 @@
-robot_a_sim_control
-robot_benchmark
-robot_bringup
-robot_description
-robot_mpc
-robot_navigation
-robot_safety
-robot_sim
-robot_state_publisher
