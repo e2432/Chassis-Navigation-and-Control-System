@@ -1,0 +1,120 @@
+# Robot A 真值里程计与 TF 树配置（W3 / E09）
+#
+# 设计口径（详见 docs/engineering/tf_tree.md）：
+#   * 真值模式（避障基准默认）：map→odom 固定不变，odom→base_footprint 由「真值适配节点」
+#     直接给出（不积分、不漂移）；仿真只提供 /sim/ground_truth 原始真值。
+#   * SLAM/定位模式：停用本文件里的真值适配节点与 map→odom 静态节点，改由算法侧发布，
+#     禁止两套 map→odom 或 odom→base_* 同时存在（E09 验收第 7 条）。
+#
+# 帧名与 URDF 一致（robot_description/urdf/agl_chs_03_f01.urdf.xacro）：
+#   base_footprint（URDF 根，地面投影）→ base_link（+0.105 m）→ 传感器
+# 路线书 E09 里写的是 `map → odom → base_link`；本仓库把 odom→base_footprint 作为 TF 边，
+# base_link 经 URDF 固定关节挂在下面，`tf2_echo odom base_link` 依然成立（差 0.105 m 高度）。
+
+tree:
+  # 逻辑层级（实际 TF 边的发布者见 publishers）
+  chain: [map, odom, base_footprint, base_link, lidar_front_link, imu_link]
+
+frames:
+  world:            # 仿真世界系（Isaac Sim 全局，右手 z 上，米）—— 不作为 TF 帧名出现
+    kind: simulation
+    note: "USD 世界原点。真值模式下 map 与它完全重合（同一原点、同一朝向）"
+  map:
+    kind: tf
+    parent: null
+  odom:
+    kind: tf
+    parent: map
+  base_footprint:
+    kind: tf
+    parent: odom
+    note: "URDF 根；z=0 贴地，roll=pitch=0（平面化）"
+  base_link:
+    kind: tf
+    parent: base_footprint
+    offset_m: [0.0, 0.0, 0.105]     # URDF base_footprint_joint 固定关节
+  lidar_front_link:
+    kind: tf
+    parent: base_link
+    offset_m: [0.13, 0.13, 0.2185]  # URDF base_lidar_front_joint
+  lidar_rear_link:
+    kind: tf
+    parent: base_link
+    offset_m: [-0.13, -0.13, 0.2185]
+  imu_link:
+    kind: tf
+    parent: lidar_front_link
+    offset_m: [0.0, 0.0, 0.0]       # PDF 2.5：IMU 集成在雷达内
+  mount_plate_link:
+    kind: tf
+    parent: base_link
+    offset_m: [0.0, 0.0, 0.146]
+
+publishers:
+  simulation_truth:                 # Isaac Sim 侧（tools/engineering/e09_truth_publisher.py）
+    publishes:
+      - {topic: /sim/ground_truth, type: nav_msgs/msg/Odometry,
+         header_frame: world, child_frame: base_footprint,
+         twist_frame: world,        # ← 关键：原始真值里速度是世界系，需要适配节点转换
+         tf: false}
+      - {topic: /clock, type: rosgraph_msgs/msg/Clock}
+    rate: physics_step              # 每个物理步一次（仿真 60 Hz）
+    publishes_tf: false             # 真值模式下仿真不发 TF（TF 唯一由下面两个节点负责）
+
+  truth_odom:                       # robot_sim/truth_odom（真值适配节点）
+    exec: "ros2 run robot_sim truth_odom_node"
+    subscribes: [/sim/ground_truth]
+    publishes:
+      - {topic: /odom, type: nav_msgs/msg/Odometry,
+         header_frame: odom, child_frame: base_footprint, twist_frame: base_footprint}
+      - {tf: "odom→base_footprint", parent: odom, child: base_footprint}
+    rate: input_rate                # 跟随 /sim/ground_truth（≈60 Hz）
+    reset_behavior: follows_truth   # 不积分：重置后一拍就跟到新的真值位姿
+
+  map_odom:                         # robot_sim/map_odom_static
+    exec: "ros2 run robot_sim map_odom_static_node"
+    publishes:
+      - {tf: "map→odom", parent: map, child: odom, qos: transient_local}
+    transform: {x: 0.0, y: 0.0, z: 0.0, yaw_deg: 0.0}   # 真值模式：map 与 odom 重合
+    rate: latched                    # /tf_static，一次锁定
+
+  robot_description:                # robot_bringup/truth_tf.launch.py 拉起
+    exec: "ros2 run robot_state_publisher robot_state_publisher"
+    source: URDF（xacro 展开，mesh_dir 指向本机绝对路径）
+    publishes:
+      - {tf: "base_footprint→base_link", parent: base_footprint, child: base_link, kind: fixed}
+      - {tf: "base_link→{lidar_front_link,lidar_rear_link,mount_plate_link,wheel_*_link}",
+         kind: fixed}
+      - {tf: "lidar_front_link→imu_link", kind: fixed}
+      - {topic: /robot_description, type: std_msgs/msg/String, qos: transient_local}
+    rate: latched + joint_states（E12 接 /joint_states 后轮子才会动）
+
+mutual_exclusion:
+  # 同一时刻只能有一套 map→odom 和一套 odom→base_footprint 的发布者
+  - name: E08 RViz 演示的静态 odom
+    file: tools/engineering/e08_tf_publish.sh
+    publishes: "静态 odom→base_footprint（identity）"
+    rule: "只在 E08 的 RViz 演示里用；真值模式下必须停掉，否则与 truth_odom 冲突
+           （truth_odom 启动时会检测并拒绝发布）"
+  - name: 既有包 truth_localization
+    file: src/robot_a_sim_control/robot_a_sim_control/truth_localization.py
+    publishes: "map→odom（上一代 6 寸轮、livox_frame 口径）"
+    rule: "与新真值节点互斥：本仓库真值模式不用它；切 SLAM 时也不能两者同时存在"
+
+conventions:
+  quaternion: "ROS 消息与 TF 一律 xyzw（x,y,z,w）；Isaac 侧 quatd 输入是 IJKR，需要换序"
+  units: "长度 m，角度 rad（TF/URDF 里 rpy 亦为弧度），速度 m/s、rad/s"
+  time: "所有 header.stamp 取仿真时间（/clock），不用墙钟；节点需 use_sim_time:=true"
+  yaw_only: "真值噪声关闭时 odom→base_footprint 只有 yaw 变化，roll/pitch 恒 0"
+  twist_sign: "twist 在 child_frame（base_footprint）下表达：x 前、y 左、z 上，wz 逆时针为正"
+
+verification:
+  commands:
+    - "ros2 topic echo /odom --once"
+    - "ros2 topic hz /odom"
+    - "ros2 run tf2_ros tf2_echo odom base_link"
+    - "ros2 run tf2_ros tf2_echo base_link lidar_link   # 本仓库为 lidar_front_link"
+  expected:
+    odom_rate_hz: physics_step      # 实测值写入 results/w3/e09/verify_summary.txt
+    static_drift_mps_max: 0.005
+    twist_frame: base_footprint

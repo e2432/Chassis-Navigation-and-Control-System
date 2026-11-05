@@ -1,0 +1,115 @@
+# Robot A 底盘几何与运动学参数（nav_ws / robot_description）
+#
+# 当前底盘型号：**AGL-CHS-03-F01**（安捷轮通用智能底盘，规格书 V1.2，2026-08-22）
+# 参数来源优先级：PDF 规格书 > 上一代整机 URDF（assets/reference/）> 明确标注的假设
+#
+# 状态：W2/E05 「最小底盘模型」已完成（URDF/Xacro + Isaac Sim 导入与稳定性验收，
+#       证据见 docs/engineering/robot_model.md 与 results/w2/e05/）。
+# 仍缺（E05 剩余项 / 待整机成员提供）：整机水平占据范围（含上半身外伸）、
+#       加速度限制、轮宽与轮心真实位置、传感器真实安装位姿、接触/摩擦参数。
+
+robot:
+  name: robot_a
+  chassis_model: AGL-CHS-03-F01
+  description_type: omnidirectional_4wheel   # 4 × 8 寸工业全向轮（PDF 2.3）
+  spec_document: "机器人通用智能底盘AGL-CHS-03-F01 产品规格书V1.2.pdf"
+  spec_date: "2026-08-22"
+
+  frames:
+    map: map
+    odom: odom
+    base: base_link
+    base_projection: base_footprint    # 地面投影（URDF 根）
+    lidar_front: lidar_front_link      # 主雷达（IMU 集成于此）
+    lidar_rear: lidar_rear_link        # 对角第二台雷达
+    imu: imu_link
+    # 注意：上一代模型/既有 state_bridge 用的 livox_frame 已不适用于新底盘，
+    #      E06/E08 需要把控制与感知侧参数改到新帧名（见 docs/接口契约.md 待确认项）
+
+  base:
+    # 平面形状：旋转 45° 的方形 + 四角截平 = 八边形（PDF 第 3 页俯视图）
+    shape: octagon_rotated_45        # 4 个 45° 斜面装轮 + 4 个被截平的轴向面
+    length_m: 0.656        # L656（沿 X？按图纸：Y 向 656、X 向 643）
+    width_m: 0.643         # W643
+    height_m: 0.226        # 251（离地总高）− 25（离地间隙）
+    total_height_m: 0.251  # 离地到车体顶面
+    ground_clearance_m: 0.025
+    face_dist_m: 0.290     # 45° 斜面的法向距离（轮内侧留 13 mm 支架间隙）
+    wheel_across_m: 0.726  # 图纸 726：跨轮、垂直 45° 斜面的距离（不是外接方盒）
+    envelope_xy_m: 0.662   # X/Y 外接包络（由 726 与轮宽推导）
+    mount_plate_m: [0.254, 0.190]  # 顶部中央上装接口板
+    footprint_m: [0.662, 0.662]    # 底盘水平占据（八边形外接方盒）
+    footprint_status: chassis_only  # 整机 footprint（含上半身/机械臂）仍待整机成员
+    footprint_polygon_octagon:      # 建议给 Nav2 的多边形 footprint（E11 定稿）
+      half_x_m: 0.3215
+      half_y_m: 0.328
+      face_dist_m: 0.290
+
+  mass:
+    chassis_kg: 48.47      # 假设：自重上限 65 − 4×4 kg 轮 − 2×0.265 kg 雷达
+    wheel_kg: 4.0          # 假设（参考模型 6 寸轮 3.4 kg，8 寸取 4.0）
+    lidar_kg: 0.265        # 假设（Mid-360 量级）
+    total_kg: 65.0         # PDF 2.1 底盘自重 ≤65 kg
+    payload_rated_kg: 100  # PDF 2.1 额定搭载负载（2.12 节写 80 kg，冲突待确认）
+    payload_static_max_kg: 120
+
+  wheels:
+    layout: omnidirectional_4wheel     # PDF 2.3：全向平移/横移/斜走/原地 360°
+    wheel_type: industrial_omni_8inch  # 8 寸工业静音全向轮（TPU 包胶）
+    radius_m: 0.105        # PDF 2.11：210 mm 全向轮
+    width_m: 0.060         # 假设：PDF 未给，沿用上一代 60 mm
+    offset_x_m: 0.23546    # 轮心 |x| = e/√2，e = 726/2 − W/2 = 333 mm
+    offset_y_m: 0.23546
+    axis_deg: 45           # 轮轴水平方向（沿 45° 斜面法向）
+    wheel_base_m: 0.471    # = 2 × offset_x（派生）
+    track_width_m: 0.471   # = 2 × offset_y（派生）
+    across_wheels_m: 0.726 # 跨轮距离（图纸 726）
+    joints:                     # fl=+x/+y(NE), fr=+x/−y(SE), rl=−x/+y(NW), rr=−x/−y(SW)
+      front_left: base_wheel_fl_joint
+      front_right: base_wheel_fr_joint
+      rear_left: base_wheel_rl_joint
+      rear_right: base_wheel_rr_joint
+    encoder_resolution_bit: 14     # PDF 2.3
+    rated_load_per_wheel_kg: 45    # PDF 2.3
+    joint_effort_limit_nm: 20.0    # 假设（运动学仿真不敏感）
+    joint_velocity_limit_radps: 20.0   # = 1.05 × 2.0 m/s / 0.105 m
+
+  sensors:
+    lidar:
+      count: 2                       # PDF 2.4：2 台 3D 固态雷达，对角安装
+      range_typical_m: 40            # 40 m @ 10% 反射率
+      range_max_m: 100               # 截止量程
+      hfov_deg: 360
+      vfov_deg: [-7, 52]
+      mount_pose_status: assumed     # 对角 ±0.25 m、顶面上方 0.0325 m（待实测）
+      sim_asset_status: 需在 E08 确认是否有对应固态雷达仿真资产
+    imu:
+      count: 1
+      integrated_in: lidar_front     # PDF 2.5：IMU 集成于 3D 雷达内
+      output_hz: 200
+      frame: imu_link
+    ultrasonic:
+      count: 4                       # PDF 2.5：前后左右四面环绕
+      range_m: [0.25, 4.5]
+      modeled: false                 # URDF 里默认不启用（xacro 参数 include_ultrasonic）
+
+  # 运动学限制：接口契约的运动学部分（符号约定见 docs/接口契约.md 第 3 节）
+  limits:
+    max_linear_x_mps: 2.0      # PDF 2.3 空载稳态速度 0~2 m/s（带载 0~1 m/s）
+    max_linear_y_mps: 2.0
+    max_angular_z_radps: null  # PDF 未给，E06 由轮速/轮径反推并实测
+    max_loaded_linear_mps: 1.0
+    overspeed_protection_mps: 1.6   # PDF 2.9 超速保护
+    max_linear_acc_mps2: null       # 未定，E06 与算法成员确认（S 型加减速曲线见 PDF 2.3）
+    max_angular_acc_radps2: null
+    cmd_vel_timeout_s: 0.5          # 沿用既有实现的指令超时（E06 复核）
+
+  # 上一代整机（2026-07 URDF + 2026-10-23 仿真资产）参数，仅作对照，
+  # 既有 robot_a_sim_control 的默认值仍是这些，E06 需要同步修改。
+  superseded_previous_robot:
+    wheel_radius_m: 0.0762
+    wheel_base_m: 0.465
+    track_width_m: 0.55
+    base_link_mass_kg: 122.48
+    lidar_frame: livox_frame
+    note: 6 寸轮、含上半身；与新底盘不同，禁止混用
