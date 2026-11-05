@@ -1,0 +1,1333 @@
+scenario: mixed
+generator_version: 1.0.0
+asset_version: '2026-11-03'
+map_version: e05_min_scene@2026-11-01
+runs: 20
+seed_rule: seed = 场景序(1~5)×100 + run 序(1~20)
+instances:
+- scenario_id: mixed_01
+  scenario: mixed
+  run_index: 1
+  seed: 501
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 12.279
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 4.518
+    y: -0.004
+    r: 0.492
+  - type: circle
+    x: 7.987
+    y: -1.174
+    r: 0.435
+  - type: circle
+    x: 2.818
+    y: 0.611
+    r: 0.411
+  - type: circle
+    x: 5.231
+    y: 1.428
+    r: 0.357
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 5.253
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.661
+    start_time_s: 5.434
+    stop_at_y: -3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 4.25
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.675
+    start_time_s: 4.064
+    stop_at_y: 3.0
+  timeout_s: 75
+  goal_tolerance: &id001
+    pos_m: 0.25
+    yaw_rad: 0.25
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_02
+  scenario: mixed
+  run_index: 2
+  seed: 502
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 12.011
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 8.161
+    y: 1.358
+    r: 0.519
+  - type: circle
+    x: 8.885
+    y: 0.874
+    r: 0.513
+  - type: circle
+    x: 8.303
+    y: 0.509
+    r: 0.359
+  - type: circle
+    x: 4.251
+    y: -1.088
+    r: 0.515
+  - type: circle
+    x: 7.29
+    y: -0.638
+    r: 0.327
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 6.034
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.696
+    start_time_s: 6.585
+    stop_at_y: 3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 7.659
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.994
+    start_time_s: 7.197
+    stop_at_y: -3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_03
+  scenario: mixed
+  run_index: 3
+  seed: 503
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 11.342
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 2.733
+    y: 0.395
+    r: 0.413
+  - type: circle
+    x: 8.34
+    y: 0.713
+    r: 0.337
+  - type: circle
+    x: 2.441
+    y: -1.224
+    r: 0.589
+  - type: circle
+    x: 5.562
+    y: -0.373
+    r: 0.545
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 7.183
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.885
+    start_time_s: 6.913
+    stop_at_y: 3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 3.97
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.965
+    start_time_s: 6.004
+    stop_at_y: 3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_04
+  scenario: mixed
+  run_index: 4
+  seed: 504
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 11.926
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 3.665
+    y: -0.931
+    r: 0.526
+  - type: circle
+    x: 9.65
+    y: 0.036
+    r: 0.485
+  - type: circle
+    x: 8.397
+    y: -0.492
+    r: 0.31
+  - type: circle
+    x: 5.43
+    y: -1.173
+    r: 0.577
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 7.535
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.606
+    start_time_s: 4.083
+    stop_at_y: 3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 7.525
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.709
+    start_time_s: 4.369
+    stop_at_y: 3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_05
+  scenario: mixed
+  run_index: 5
+  seed: 505
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 11.299
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 5.453
+    y: 0.011
+    r: 0.401
+  - type: circle
+    x: 8.037
+    y: 0.423
+    r: 0.422
+  - type: circle
+    x: 8.538
+    y: -0.526
+    r: 0.33
+  - type: circle
+    x: 3.934
+    y: -1.11
+    r: 0.336
+  - type: circle
+    x: 7.615
+    y: 0.211
+    r: 0.567
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 6.939
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.918
+    start_time_s: 4.72
+    stop_at_y: 3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 3.938
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.674
+    start_time_s: 6.539
+    stop_at_y: -3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_06
+  scenario: mixed
+  run_index: 6
+  seed: 506
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 12.515
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 9.7
+    y: 1.09
+    r: 0.472
+  - type: circle
+    x: 7.665
+    y: -0.702
+    r: 0.352
+  - type: circle
+    x: 7.293
+    y: -0.575
+    r: 0.308
+  - type: circle
+    x: 7.355
+    y: -1.287
+    r: 0.36
+  - type: circle
+    x: 6.746
+    y: 0.945
+    r: 0.518
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 7.328
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.647
+    start_time_s: 4.452
+    stop_at_y: -3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 4.405
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.901
+    start_time_s: 4.033
+    stop_at_y: 3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_07
+  scenario: mixed
+  run_index: 7
+  seed: 507
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 11.964
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 4.191
+    y: -0.329
+    r: 0.446
+  - type: circle
+    x: 5.205
+    y: 0.369
+    r: 0.567
+  - type: circle
+    x: 8.997
+    y: 1.208
+    r: 0.543
+  - type: circle
+    x: 5.349
+    y: -0.759
+    r: 0.575
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 5.178
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.825
+    start_time_s: 6.787
+    stop_at_y: 3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 6.561
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.619
+    start_time_s: 2.178
+    stop_at_y: -3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_08
+  scenario: mixed
+  run_index: 8
+  seed: 508
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 12.084
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 4.231
+    y: 0.518
+    r: 0.321
+  - type: circle
+    x: 6.004
+    y: 0.042
+    r: 0.493
+  - type: circle
+    x: 5.417
+    y: 0.315
+    r: 0.524
+  - type: circle
+    x: 9.235
+    y: 0.821
+    r: 0.354
+  - type: circle
+    x: 4.906
+    y: 0.71
+    r: 0.412
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 7.704
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.679
+    start_time_s: 6.252
+    stop_at_y: -3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 5.112
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.984
+    start_time_s: 7.386
+    stop_at_y: -3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_09
+  scenario: mixed
+  run_index: 9
+  seed: 509
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 12.41
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 7.772
+    y: -1.028
+    r: 0.581
+  - type: circle
+    x: 7.617
+    y: -0.605
+    r: 0.542
+  - type: circle
+    x: 6.463
+    y: -1.34
+    r: 0.383
+  - type: circle
+    x: 3.045
+    y: 0.835
+    r: 0.321
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 6.853
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.939
+    start_time_s: 7.091
+    stop_at_y: 3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 8.162
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.685
+    start_time_s: 4.614
+    stop_at_y: 3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_10
+  scenario: mixed
+  run_index: 10
+  seed: 510
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 12.369
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 8.762
+    y: -0.794
+    r: 0.422
+  - type: circle
+    x: 6.777
+    y: -0.802
+    r: 0.49
+  - type: circle
+    x: 5.687
+    y: -0.772
+    r: 0.594
+  - type: circle
+    x: 7.1
+    y: -1.007
+    r: 0.431
+  - type: circle
+    x: 6.703
+    y: 0.722
+    r: 0.423
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 5.461
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.903
+    start_time_s: 4.935
+    stop_at_y: -3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 5.719
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.74
+    start_time_s: 6.521
+    stop_at_y: -3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_11
+  scenario: mixed
+  run_index: 11
+  seed: 511
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 11.217
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 7.088
+    y: 0.47
+    r: 0.445
+  - type: circle
+    x: 8.793
+    y: -1.644
+    r: 0.454
+  - type: circle
+    x: 6.6
+    y: 0.149
+    r: 0.498
+  - type: circle
+    x: 3.293
+    y: 0.762
+    r: 0.356
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 6.467
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.874
+    start_time_s: 4.385
+    stop_at_y: -3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 4.659
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.982
+    start_time_s: 5.66
+    stop_at_y: -3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_12
+  scenario: mixed
+  run_index: 12
+  seed: 512
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 11.038
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 4.716
+    y: 0.203
+    r: 0.567
+  - type: circle
+    x: 7.85
+    y: -1.428
+    r: 0.372
+  - type: circle
+    x: 2.322
+    y: 1.638
+    r: 0.407
+  - type: circle
+    x: 6.071
+    y: -0.574
+    r: 0.487
+  - type: circle
+    x: 3.359
+    y: 0.647
+    r: 0.409
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 6.604
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.938
+    start_time_s: 6.822
+    stop_at_y: 3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 5.209
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.809
+    start_time_s: 4.166
+    stop_at_y: -3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_13
+  scenario: mixed
+  run_index: 13
+  seed: 513
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 11.033
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 4.962
+    y: 1.071
+    r: 0.354
+  - type: circle
+    x: 4.048
+    y: 0.668
+    r: 0.354
+  - type: circle
+    x: 2.953
+    y: 1.39
+    r: 0.343
+  - type: circle
+    x: 3.413
+    y: 0.484
+    r: 0.515
+  - type: circle
+    x: 5.407
+    y: -1.478
+    r: 0.357
+  - type: circle
+    x: 3.161
+    y: 0.278
+    r: 0.467
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 3.598
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.932
+    start_time_s: 4.218
+    stop_at_y: 3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 3.896
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.999
+    start_time_s: 5.723
+    stop_at_y: -3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_14
+  scenario: mixed
+  run_index: 14
+  seed: 514
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 11.716
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 5.064
+    y: -0.513
+    r: 0.347
+  - type: circle
+    x: 5.962
+    y: -0.487
+    r: 0.547
+  - type: circle
+    x: 2.613
+    y: -0.641
+    r: 0.511
+  - type: circle
+    x: 5.954
+    y: 0.049
+    r: 0.454
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 4.219
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.682
+    start_time_s: 6.451
+    stop_at_y: 3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 7.857
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.907
+    start_time_s: 7.035
+    stop_at_y: 3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_15
+  scenario: mixed
+  run_index: 15
+  seed: 515
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 11.329
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 8.701
+    y: 0.071
+    r: 0.329
+  - type: circle
+    x: 2.176
+    y: -1.099
+    r: 0.553
+  - type: circle
+    x: 7.263
+    y: 0.357
+    r: 0.442
+  - type: circle
+    x: 8.045
+    y: 1.551
+    r: 0.369
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 5.093
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.746
+    start_time_s: 6.42
+    stop_at_y: 3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 7.441
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.696
+    start_time_s: 6.134
+    stop_at_y: 3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_16
+  scenario: mixed
+  run_index: 16
+  seed: 516
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 12.63
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 6.895
+    y: 0.783
+    r: 0.538
+  - type: circle
+    x: 2.395
+    y: -0.912
+    r: 0.317
+  - type: circle
+    x: 8.947
+    y: 0.684
+    r: 0.41
+  - type: circle
+    x: 2.266
+    y: 0.158
+    r: 0.481
+  - type: circle
+    x: 4.02
+    y: -1.188
+    r: 0.555
+  - type: circle
+    x: 4.604
+    y: 1.292
+    r: 0.428
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 5.875
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.615
+    start_time_s: 5.422
+    stop_at_y: -3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 7.682
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.635
+    start_time_s: 6.164
+    stop_at_y: 3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_17
+  scenario: mixed
+  run_index: 17
+  seed: 517
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 12.624
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 3.514
+    y: 0.001
+    r: 0.421
+  - type: circle
+    x: 3.319
+    y: -1.107
+    r: 0.391
+  - type: circle
+    x: 9.819
+    y: 1.485
+    r: 0.547
+  - type: circle
+    x: 9.604
+    y: 0.523
+    r: 0.495
+  - type: circle
+    x: 2.375
+    y: 0.774
+    r: 0.374
+  - type: circle
+    x: 5.76
+    y: 0.593
+    r: 0.427
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 4.803
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.749
+    start_time_s: 6.869
+    stop_at_y: 3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 5.02
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.962
+    start_time_s: 6.549
+    stop_at_y: 3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_18
+  scenario: mixed
+  run_index: 18
+  seed: 518
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 12.878
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 7.239
+    y: 0.042
+    r: 0.407
+  - type: circle
+    x: 7.217
+    y: -0.084
+    r: 0.373
+  - type: circle
+    x: 3.966
+    y: -0.344
+    r: 0.331
+  - type: circle
+    x: 5.839
+    y: 0.227
+    r: 0.332
+  - type: circle
+    x: 7.612
+    y: 0.106
+    r: 0.509
+  - type: circle
+    x: 7.404
+    y: 1.607
+    r: 0.553
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 7.757
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.649
+    start_time_s: 2.632
+    stop_at_y: 3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 4.584
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.928
+    start_time_s: 7.62
+    stop_at_y: 3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_19
+  scenario: mixed
+  run_index: 19
+  seed: 519
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 12.207
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 4.261
+    y: 0.666
+    r: 0.371
+  - type: circle
+    x: 3.699
+    y: -1.415
+    r: 0.417
+  - type: circle
+    x: 5.684
+    y: -1.207
+    r: 0.573
+  - type: circle
+    x: 6.806
+    y: -1.333
+    r: 0.362
+  - type: circle
+    x: 2.024
+    y: -0.317
+    r: 0.487
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 5.787
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.642
+    start_time_s: 3.9
+    stop_at_y: -3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 6.844
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.855
+    start_time_s: 6.422
+    stop_at_y: -3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
+- scenario_id: mixed_20
+  scenario: mixed
+  run_index: 20
+  seed: 520
+  asset_version: '2026-11-03'
+  map_version: e05_min_scene@2026-11-01
+  robot_start:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+  goal:
+    x: 12.965
+    y: 0.0
+    yaw: 0.0
+  obstacles:
+  - type: circle
+    x: 3.386
+    y: 0.037
+    r: 0.421
+  - type: circle
+    x: 6.028
+    y: 0.598
+    r: 0.374
+  - type: circle
+    x: 4.85
+    y: -1.047
+    r: 0.335
+  - type: circle
+    x: 10.229
+    y: 0.647
+    r: 0.45
+  - type: circle
+    x: 4.622
+    y: 0.842
+    r: 0.534
+  dynamic:
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 8.427
+      y: 3.0
+    velocity:
+      vx: 0.0
+      vy: 0.877
+    start_time_s: 6.575
+    stop_at_y: -3.0
+  - type: pedestrian
+    radius: 0.3
+    start:
+      x: 7.468
+      y: -3.0
+    velocity:
+      vx: 0.0
+      vy: -0.74
+    start_time_s: 3.387
+    stop_at_y: 3.0
+  timeout_s: 75
+  goal_tolerance: *id001
+  solvable: true
+  recovery_required: false
+  passage: null
+  dead_end: null
+  validity:
+    connectivity_checked: true
+    robot_radius_m: 0.35
+    grid_m: 0.1
+    resamples: 0
