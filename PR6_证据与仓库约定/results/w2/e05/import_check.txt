@@ -1,0 +1,69 @@
+# E05 最小底盘模型导入与静态稳定性检查
+时间: 2026-11-01T12:48:31
+xacro 源文件: <your-ws>/src/robot_description/urdf/agl_chs_03_f01.urdf.xacro
+展开后 URDF: <your-ws>/results/w2/e05/agl_chs_03_f01_expanded.urdf（9696 字节, sha256=69e696907192b517）
+xacro 命令: /opt/ros/humble/bin/xacro src/robot_description/urdf/agl_chs_03_f01.urdf.xacro mesh_dir:=file://<your-ws>/src/robot_description/meshes
+SimulationApp ready in 9.5 s
+扩展 isaacsim.asset.importer.urdf enabled=True
+初始 stage: anon:0x62adde6728d0:World0.usd
+场景骨架: /World/PhysicsScene + /World/GroundPlane 就绪
+World 已创建（physics_dt=1/60）
+导入器配置项(18 个): collision_from_visuals, convex_decomp, create_physics_scene, default_drive_strength, default_drive_type, default_position_drive_damping, density, distance_scale, fix_base, import_inertia_tensor, make_default_prim, merge_fixed_joints, override_joint_dynamics, parse_mimic, replace_cylinders_with_capsules, self_collision, subdivision_scheme, up_vector
+已应用的配置: fix_base=False, merge_fixed_joints=False, collision_from_visuals=False, self_collision=False, create_physics_scene=False, import_inertia_tensor=False, make_default_prim=True, replace_cylinders_with_capsules=False, make_instanceable(不存在)
+导入 status=True articulation_root=/robot_a/base_footprint
+robot prim valid=True type=Xform
+prim 结构（≤3 层）:
+- base_footprint (Xform)
+  - visuals (Xform)
+  - collisions (Xform)
+轮心世界位姿与包络:
+  wheel_fl: (0.2355, +0.2355, 0.1050) m
+  wheel_fr: (0.2355, -0.2355, 0.1050) m
+  wheel_rl: (-0.2355, +0.2355, 0.1050) m
+  wheel_rr: (-0.2355, -0.2355, 0.1050) m
+含轮 X/Y 外接包络: 661.8 × 661.8 mm（由 跨轮726 与轮宽推导得 662）
+跨轮距离（垂直 45° 斜面）: 726.0 mm（图纸 726）
+Mesh prim 数: 3；引用的网格文件: []
+  网格 mesh: 643.0 × 656.0 × 226.0 mm
+  网格 mesh: 643.0 × 656.0 × 226.0 mm
+物理旋转关节数: 4（期望 4：四个轮）
+articulation num_dof=4 body_count=10
+位姿采样点: /robot_a/base_link
+timeline.is_playing=True sim_time=0.100
+采样写入 <your-ws>/results/w2/e05/settle_samples.csv（132 行）
+
+== 静置结果（预热后 2 s 窗口，120 帧）==
+base_link 高度 z: 首 0.1050 → 末 0.1050 m（期望≈轮半径 0.105）
+底盘底面离地: 首 0.0250 → 末 0.0250 m（期望≈0.025，PDF 离地间隙 25 mm）
+底盘底面最小离地: 0.0250 m（<0 表示穿透）
+水平漂移: dx=-0.0000 m dy=0.0000 m
+z 抖动峰峰值: 0.0000 m
+姿态倾角最大: 0.00°
+
+== 验收 ==
+  [PASS] 导入成功
+  [PASS] 四轮旋转关节
+  [PASS] 车体网格已加载
+  [PASS] 跨轮距离≈726mm
+  [PASS] 外接包络≈662mm
+  [PASS] DOF=4
+  [PASS] 无穿透(底面>=0)
+  [PASS] 离地间隙接近25mm
+  [PASS] 静置高度≈轮半径
+  [PASS] 无水平漂移(<10mm)
+  [PASS] 无持续抖动(z峰峰<5mm)
+  [PASS] 姿态水平(<2°)
+
+== 落体试验（抬到 z=0.30 m 自由落体）==
+base_link 起始 z=0.4023（设置 0.30 + 轮半径 0.105 = 0.405）→ 落地 z=0.1050 m（期望 0.105）
+落体过程最低 z=0.1050 m（<0 表示穿透地面）
+  [PASS] 底盘是自由体(可被抬起)
+  [PASS] 自由落体后回到轮子着地高度
+  [PASS] 落地无穿透
+
+总体: PASS
+
+USD 导出: status=True path=<your-ws>/assets/robot_a_chassis_agl_chs03_f01.usd 大小=1478 字节
+USD 目录清单: ['COLCON_IGNORE', 'MANIFEST.sha256', 'configuration', 'reference', 'robot_a_chassis_agl_chs03_f01.usd', 'robot_a_isaac', 'scene_robot_a_nav.usd', 'scene_simulation.usd', 'scenes']
+USD 回读: 默认 prim=/robot_a, 找到 link 9/9, 关节 9, 铰接根 ['/robot_a/base_footprint']
+  [PASS] 导出的 USD 可回读且结构完整

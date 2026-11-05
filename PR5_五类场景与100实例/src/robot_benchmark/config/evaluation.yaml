@@ -1,0 +1,23 @@
+# 批量评测清单（W1 占位，E24 实装）
+#
+# 目前只固定“清单里必须有什么”，不填具体任务——具体实例由 E14 生成、E24 冻结。
+manifest_version: 0.1.0-draft
+status: scenarios_ready      # 场景与实例已生成；run/batch 执行仍未实现（E15）
+
+controllers: [dwb]            # 目标：dwb / mppi / teb(如可用) / mpc
+# 五个场景键与算法侧 docs/接口契约.md 一致（E14 实装）
+categories:
+  - static_avoid
+  - dynamic_pedestrian
+  - narrow_passage
+  - dead_end
+  - mixed
+runs_per_category: 20         # 每类 20 个固定实例（算法侧 5场景需求清单.md）
+instance_manifest: scenarios/test_list.yaml   # 冻结实例清单（所有控制器复用）
+
+safety_layer:
+  required: true              # 所有控制器必须经过同一安全层
+  config: src/robot_safety/config/safety.yaml
+
+metrics_contract: docs/指标定义.md
+asset_version: "2026-10-23"

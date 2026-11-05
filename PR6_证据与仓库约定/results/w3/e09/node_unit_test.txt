@@ -1,0 +1,19 @@
+E09 节点级测试（合成真值，不需要 Isaac Sim）
+输入：/sim/ground_truth 20 Hz，位姿 yaw=45°，twist 世界系 (0.30, 0.00) m/s, wz=0.50 rad/s
+发布 161 条，收到 /odom 130 条，TF odom→base_footprint 161 条，/tf_static 1 条
+
+[PASS] /odom header.frame_id — odom
+[PASS] /odom child_frame_id — base_footprint
+[PASS] /odom stamp 非零 — 1793635181.466868426
+twist（机体系）= (0.2121, -0.2121) wz=0.5000；世界系原值 = (0.30, 0.00) wz=0.50；期望机体 = (0.2121, -0.2121)
+[PASS] twist 已转到机体系 — 误差 (2.8e-17, 2.8e-17)
+[PASS] twist 未停在世界系 — 若等于 (0.30, 0.00) 说明没做 R(−yaw) 旋转
+[PASS] wz 保持 — 0.5000
+输出间隔中位 50.0 ms（≈20.0 Hz）
+[PASS] 输出不重复（每条 stamp 唯一） — 130 条 / 130 个唯一 stamp
+[PASS] 位姿原样透传（x=1.000 不动） — x=1.000000 y=0.500000
+[PASS] TF odom→base_footprint 存在 — odom
+[PASS] TF 与 /odom 位姿一致 — Δ=(0.0e+00, 0.0e+00)
+[PASS] /tf_static 有 map→odom
+
+结果：PASS

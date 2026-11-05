@@ -1,0 +1,28 @@
+# 正常重力下的 GUI 入口冒烟（--headless-test）
+[E08-GUI] 没有在运行
+[E08-GUI] ROS_DOMAIN_ID=42（GUI 进程视角；外部终端必须一致，未设置即默认 0）
+[E08-GUI] IMU: /World/robot_a/base_link/ImuE08 freq=200 Hz（含重力）
+[E08-GUI] physics 模式：重力大小=9.8100004196167 方向=(0.0, 0.0, -1.0)（速度驱动 kps=0, kds=1e4, maxEffort=80）
+[E08-GUI] 点云可视化: /World/E08Debug/points（绿色点，随雷达更新）
+[E08-GUI] 开始。motion=True draw=True ros=True —— 外部终端可查 ros2 topic hz /points_raw
+[E08-GUI] articulation 初始化: DOF=4 关节=['base_wheel_fl_joint', 'base_wheel_fr_joint', 'base_wheel_rl_joint', 'base_wheel_rr_joint']
+[E08-GUI] 剧本: 原地逆时针 90°（wz=+0.5，IMU wz→+0.46）
+[E08-GUI] 剧本: 前进（点云里墙应保持在正前方 3 m 左右）
+[E08-GUI] 已停止：点云 91 帧、IMU 544 条（空帧 0），期间 |base_footprint.z| 最大 0.000 m
+[E08-GUI] 冒烟结果: 仿真时间 9.1 s，点云 91 帧（9.98 Hz），IMU 544 条（59.67 Hz），空帧 0 → PASS
+
+# 自测：故意把 gravityMagnitude 写成 −9.81（旧版本的 bug = 重力朝上 → 机器人起飞），验证能自动纠正
+[E08-GUI] 自测：已把重力改成 −9.81（模拟旧版本的 bug）
+[E08-GUI] 没有在运行
+[E08-GUI] ROS_DOMAIN_ID=42（GUI 进程视角；外部终端必须一致，未设置即默认 0）
+[E08-GUI] IMU: /World/robot_a/base_link/ImuE08 freq=200 Hz（含重力）
+[E08-GUI] 重力被改成 9.81（原值 -9.8100004196167 —— 之前被关过/写反了，会让车飘或飞）
+[E08-GUI] physics 模式：重力大小=9.8100004196167 方向=(0.0, 0.0, -1.0)（速度驱动 kps=0, kds=1e4, maxEffort=80）
+[E08-GUI] 点云可视化: /World/E08Debug/points（绿色点，随雷达更新）
+[E08-GUI] 开始。motion=True draw=True ros=True —— 外部终端可查 ros2 topic hz /points_raw
+[E08-GUI] articulation 初始化: DOF=4 关节=['base_wheel_fl_joint', 'base_wheel_fr_joint', 'base_wheel_rl_joint', 'base_wheel_rr_joint']
+[E08-GUI] 剧本: 原地逆时针 90°（wz=+0.5，IMU wz→+0.46）
+[E08-GUI] 剧本: 前进（点云里墙应保持在正前方 3 m 左右）
+[E08-GUI] 剧本: 原地顺时针 90°（wz=−0.5）
+[E08-GUI] 已停止：点云 97 帧、IMU 576 条（空帧 0），期间 |base_footprint.z| 最大 0.000 m
+[E08-GUI] 冒烟结果: 仿真时间 9.7 s，点云 97 帧（10.05 Hz），IMU 576 条（59.69 Hz），空帧 0 → PASS

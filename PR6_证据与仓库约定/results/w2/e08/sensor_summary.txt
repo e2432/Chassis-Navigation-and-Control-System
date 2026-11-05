@@ -1,0 +1,30 @@
+== 参数 ==
+配置: src/robot_sim/config/sensors.yaml
+雷达: 360×8 射线, vfov=[-7.0, 52.0]°, max_range=40.0 m, 10 Hz
+IMU : 200 Hz（isaacsim.sensors.physics，含重力；ROS 发布按物理步，实测约 60 Hz）
+扩展 isaacsim.ros2.bridge enabled=True
+扩展 isaacsim.sensors.physics enabled=True
+场景: <your-ws>/assets/scenes/e05_min_scene.usd
+physics 模式：保留重力并驱动轮子（IMU 有真实动态；平移只到指令的 ~30%，见 E06）
+IMU 已创建: /World/robot_a/base_link/ImuE08 (freq=200 Hz)
+动作图已建立: /points_raw, /imu, /clock
+射线总数/帧: 2880
+articulation DOF=4
+已配置轮子速度驱动（kps=0, kds=1e4, maxEffort=80）
+运动剧本: ['still', 'rot_ccw_90', 'forward', 'rot_cw_90', 'lateral_left', 'still2']
+阶段 -> rot_ccw_90
+阶段 -> forward
+阶段 -> rot_cw_90
+阶段 -> lateral_left
+阶段 -> still2
+阶段 -> still
+阶段 -> rot_ccw_90
+阶段 -> forward
+阶段 -> rot_cw_90
+阶段 -> lateral_left
+
+== 统计 ==
+点云发布次数=299，IMU 发布次数=1792，空点云帧=0
+单帧射线耗时: 均值 14.9 ms / 最大 16.6 ms（2880 条射线）
+墙体在机体坐标系的位置: x=3.34 y=0.30 m（用于核对朝向）
+日志: <your-ws>/results/w2/e08/sensors_log.csv
