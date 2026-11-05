@@ -1,6 +1,0 @@
-*   8dba50a (HEAD -> main) merge(E03,E04): W1 工作空间与接口契约草案
-|\
-| * 014ba42 (feat/w1-e03-workspace) docs(E04): 接口契约 v1.0-draft 与七项指标草案
-| * 763d114 feat(E03): 建立七包骨架、资产分发方式与仓库规范
-|/
-* 7c3e0e5 docs(E01,E02): W1 环境核对与桥接验证的脚本与证据

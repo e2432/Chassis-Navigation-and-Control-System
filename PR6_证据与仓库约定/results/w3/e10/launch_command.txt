@@ -1,2 +1,0 @@
-== E10 一条命令启动 ==
-ros2 launch robot_bringup simulation.launch.py use_sim_time:=true mode:=kinematic gui:=false
