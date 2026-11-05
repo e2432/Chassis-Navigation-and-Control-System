@@ -36,6 +36,7 @@ sys.path.insert(0, str(ROOT))
 from mpc_proto.chassis import load_chassis
 from mpc_proto.mpc import MPCConfig
 from mpc_proto.plotting import plot_run
+from mpc_proto.runlog import write_run
 from mpc_proto.scenarios import ALL, by_name
 from mpc_proto.sim import RunResult, run
 from run_sim import fmt_row, print_table
@@ -130,6 +131,10 @@ def main() -> int:
     ap.add_argument("--sys-python", default="/usr/bin/python3")
     ap.add_argument("--fetcher", default=str(ROOT / "mpc_proto/navfn_source.py"))
     ap.add_argument("--action-timeout", type=float, default=30.0)
+    ap.add_argument("--no-vo", action="store_true", help="消融：动态障碍不作速度预测")
+    ap.add_argument("--no-esdf", action="store_true", help="消融：静态障碍不进 QP")
+    ap.add_argument("--no-slack", action="store_true", help="消融：障碍约束转硬约束")
+    ap.add_argument("--no-terminal", action="store_true", help="消融：关闭终端代价")
     ap.add_argument("--no-plot", action="store_true")
     ap.add_argument("--quiet", action="store_true", help="不打印逐步日志")
     args = ap.parse_args()
@@ -141,7 +146,13 @@ def main() -> int:
         return 1
 
     chassis = load_chassis(args.chassis)
-    cfg = MPCConfig(N=args.N)
+    cfg = MPCConfig(
+        N=args.N,
+        vo=not args.no_vo,
+        esdf=not args.no_esdf,
+        slack=not args.no_slack,
+        terminal=not args.no_terminal,
+    )
     out_dir = Path(args.out)
     fetcher = Path(args.fetcher)
     print(
@@ -207,6 +218,8 @@ def main() -> int:
         # 3) 换源：sim.run / ReferencePath 零改动
         sc = dataclasses.replace(sc0, waypoints=wps)
         res: RunResult = run(sc, chassis, cfg, log_every=0 if args.quiet else 100)
+        run_dir = write_run(out_dir, sc.name, cfg, res)
+        print(f"  run 记录 → {run_dir}")
         rows.append(fmt_row(res))
         all_pass &= res.acceptance_pass() and res.arrived
         if not args.no_plot:

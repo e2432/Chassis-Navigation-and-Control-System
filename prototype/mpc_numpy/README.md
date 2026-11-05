@@ -30,12 +30,13 @@ prototype/mpc_numpy/
 │   ├── reference.py     # 折线参考 + 时间律推进 + 目标截断
 │   ├── distance.py      # 解析距离场（静态 + 动态预测）
 │   ├── scenarios.py     # S1/S2/S3 场景定义
-│   ├── sim.py           # 滚动推演引擎 + 验收计算
+│   ├── sim.py           # 滚动推演引擎 + 验收计算 + QP 计时
+│   ├── runlog.py        # 评测记录落盘（run.json + trajectory.npz，契约 v1.2）
 │   ├── plotting.py      # 诊断图
 │   ├── chassis.py       # 底盘 YAML 载入
 │   ├── mapping.py       # W3：场景几何 → PGM+YAML 栅格化（动态障碍不进图）
 │   └── navfn_source.py  # W3：rclpy 取源 CLI（系统 Python 执行，禁止 import）
-└── out/                 # 生成物（git 忽略）：诊断图 + maps/ + w3_logs/
+└── out/                 # 生成物（git 忽略）：诊断图 + maps/ + w3_logs/ + runs/
 ```
 
 ## 启动指令教程
@@ -154,6 +155,22 @@ $PY edt_sanity.py
 到达判定复用指标定义 0.25 m / 0.25 rad。W3 复用同四条，仅参考几何换真 NavFn 输出
 （docs/MPC公式化.md §12「验收四条原样适用」）。
 
+## run 记录（评测记录 schema）
+
+每次推演自动落盘评测记录（docs/接口契约.md v1.2「评测记录 schema」，Python 原型与 C++ 插件同口径）：
+
+```
+out/runs/<场景>/<seed>/       # 模拟场景 S1~S3 无 seed → dev/
+├── run.json                  # 场景/种子/消融开关快照/7 指标/QP 计时汇总/失败分类
+└── trajectory.npz            # t / state / control / qp_ms 四数组
+```
+
+- 消融开关快照 `{vo, esdf, slack, terminal, N, q_ratio}` 必随 run 记录落盘；
+  开关语义：`--no-vo` 动态障碍不作速度预测、`--no-esdf` 静态障碍不进 QP、
+  `--no-slack` 障碍约束转硬约束、`--no-terminal` 关闭终端代价（真值裁判不受开关影响）。
+- QP 计时口径 = 每控制拍 `MPCSolver.solve` 外环一次（含 SQP 迭代）。
+- `estop_count` 恒 0（原型无安全急停层）；`smoothness` = 归一化控制量总变差。
+
 ## 代码文件详解
 
 ### `run_w2.sh` —— 验收入口
@@ -164,7 +181,7 @@ W2 验收①的「一条命令」。`set -euo pipefail` 保证任何一步失败
 
 ### `run_sim.py` —— 场景入口 CLI
 
-解析命令行（`--all` / `--scenario` / `--N` / `--chassis` / `--out` / `--no-plot` / `--quiet`），
+解析命令行（`--all` / `--scenario` / `--N` / `--chassis` / `--out` / `--no-plot` / `--quiet`；消融开关 `--no-vo` / `--no-esdf` / `--no-slack` / `--no-terminal`），
 载入底盘与 MPC 配置，逐场景调 `sim.run()`，打印验收表并画诊断图。
 
 | 函数 | 作用 |
