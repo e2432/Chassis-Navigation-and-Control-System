@@ -1,8 +1,0 @@
-scenario: dead_end
-timeout_s: 60
-center_x_m: [4.0, 7.5]
-center_y_m: [-0.8, 0.8]
-mouth_width_m: [1.32, 1.50]
-depth_m: [1.8, 3.2]
-wall_thickness_m: [0.18, 0.35]
-goal_distance_m: [10.5, 13.0]
