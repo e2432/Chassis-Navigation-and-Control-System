@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>robot_benchmark</name>
+  <version>0.2.0</version>
+  <description>Five deterministic scenario generators and 100 frozen instances.</description>
+  <maintainer email="member3@example.com">engineering (member 3)</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <test_depend>python3-pytest</test_depend>
+  <export><build_type>ament_python</build_type></export>
+</package>
