@@ -4,6 +4,7 @@ W2 开环模拟：自包含滚动推演（不接 ROS/Isaac，闭环于完美运�
 W3 闭环第一刀：参考几何换为**真 NavFn 全局路径**（最小 ROS 挂载、一次性取路径后全 numpy 推演，
 docs/MPC公式化.md §12）。数学依据：[docs/MPC公式化.md](../../docs/MPC公式化.md)；
 W5~6 移植 C++ Nav2 插件（`mpc_controller`，见 [docs/Nav2插件教程笔记.md](../../docs/Nav2插件教程笔记.md)）。
+环境配置（conda `pro` / ROS 2 Humble / NavFn / 中文字体）：[docs/实验环境配置.md](../../docs/实验环境配置.md)。
 
 - [启动指令教程](#启动指令教程)
 - [验收四条](#验收四条每场景)
@@ -16,9 +17,13 @@ W5~6 移植 C++ Nav2 插件（`mpc_controller`，见 [docs/Nav2插件教程笔�
 prototype/mpc_numpy/
 ├── run_w2.sh            # W2 验收①：一条命令跑全部
 ├── run_w3.sh            # W3 验收①：一条命令（真 NavFn 参考）
-├── run_sim.py           # W2 场景入口 CLI（跑模拟 + 验收表 + 诊断图）
-├── run_w3.py            # W3 场景入口（取 NavFn 折线 → 换源 → sim.run 零改动）
-├── nav2_w3_params.yaml  # W3 planner_server + costmap（inflation 0.35）参数
+├── run_w4.sh            # W4 实例入口（NavFn + nav2_w4_params.yaml）
+├── run_sim.py           # W2 场景入口 CLI（--instance 为直线调试/冒烟）
+├── run_w3.py            # W3/W4 场景入口（--instance/--instances/--suite）
+├── check_instances.py   # W4 加载器验收（12 项，无 ROS）
+├── summarize_runs.py    # W4 run.json 汇总 + dynamic_stress + 四阈值自查
+├── nav2_w3_params.yaml  # W3 S1~S3 planner_server + costmap（inflation 0.35）
+├── nav2_w4_params.yaml  # W4 实例 NavFn 参数（inflation 0.60 / scaling 5.0）
 ├── sweep_horizon.py     # 预测时域 N 敏感性扫描
 ├── edt_sanity.py        # 非验收：栅格 EDT 梯度排雷
 ├── README.md
@@ -26,17 +31,17 @@ prototype/mpc_numpy/
 │   ├── omni.yaml        # 全向轮底盘（契约 schema v1）
 │   └── diff.yaml        # 差速轮（vy_max=0，迁移冒烟）
 ├── mpc_proto/           # 核心库（被上面的脚本 import）
-│   ├── mpc.py           # QP 装配 + OSQP 求解 + 回退
+│   ├── mpc.py           # QP 装配 + OSQP 求解 + 回退 + W4 benchmark 预设
 │   ├── reference.py     # 折线参考 + 时间律推进 + 目标截断
-│   ├── distance.py      # 解析距离场（静态 + 动态预测）
-│   ├── scenarios.py     # S1/S2/S3 场景定义
+│   ├── distance.py      # 解析距离场（圆障碍 + 轴对齐墙体；静态 + 动态预测）
+│   ├── scenarios.py     # S1/S2/S3 模拟场景 + W4 实例表加载器
 │   ├── sim.py           # 滚动推演引擎 + 验收计算 + QP 计时
 │   ├── runlog.py        # 评测记录落盘（run.json + trajectory.npz，契约 v1.2）
-│   ├── plotting.py      # 诊断图
+│   ├── plotting.py      # 诊断图（含墙体/行人拖尾裁剪）
 │   ├── chassis.py       # 底盘 YAML 载入
-│   ├── mapping.py       # W3：场景几何 → PGM+YAML 栅格化（动态障碍不进图）
-│   └── navfn_source.py  # W3：rclpy 取源 CLI（系统 Python 执行，禁止 import）
-└── out/                 # 生成物（git 忽略）：诊断图 + maps/ + w3_logs/ + runs/
+│   ├── mapping.py       # W3/W4：场景几何 → PGM+YAML（圆/墙静态进图）
+│   └── navfn_source.py  # W3/W4：rclpy 取源 CLI（系统 Python 执行，禁止 import）
+└── out/                 # 生成物（git 忽略）：诊断图 + maps/ + w3_logs/ + w4_logs/ + runs/
 ```
 
 ## 启动指令教程
@@ -100,7 +105,33 @@ $PY -c "import numpy, scipy, osqp, matplotlib, yaml; print('env ok')"
 planner_server）由 `run_w3.py` **逐场景拉起/回收**（单栈 LoadMap 换图有 StaticLayer
 异步竞态，会串图，实测踩过）。
 
-### 3. 分脚本指令
+### 3. W4 5 场景实例（NavFn 参考）
+
+前置：已完成 W3 的 ROS/Nav2 安装（§0/§2）。**W4 判读数据必须走 NavFn 参考**；实例模式自动使用
+`nav2_w4_params.yaml`（inflation 0.60 / cost_scaling 5.0，与 `d_safe=0.30` 匹配），
+W3 回归仍用 `nav2_w3_params.yaml`（0.35 / 3.0），S1~S3 存档基准不受影响。
+
+```bash
+# 单实例端到端（静态绕行）
+./run_w4.sh --instance static_avoid:1 --no-plot --quiet
+# 调参工作集：5 场景 × 前 5（输出到独立目录，不进判读）
+./run_w4.sh --suite --runs 1-5 --out out/tuning/roundN --no-plot --quiet
+# 判读数据：定稿参数全 20
+./run_w4.sh --suite --runs all --out out --no-plot --quiet
+# 只取 NavFn 路径做 100 条可行性扫描（不推演/不落 run）
+./run_w4.sh --suite --runs all --map-only --quiet
+
+PY=/home/robot/miniconda3/envs/pro/bin/python
+$PY check_instances.py
+$PY summarize_runs.py --runs-root out/runs --expected 20 --check
+```
+
+输出：`out/runs/<scenario>/<seed>/{run.json,trajectory.npz}`、`out/maps/<scenario_id>/`、
+`out/w4_logs/<scenario>/`；调参记录在 `out/tuning/roundN/runs/`（**不进判读**）；
+`--save-paths` 另存 `out/paths/<scenario_id>.json`（诊断用）。完整环境见
+[docs/实验环境配置.md](../../docs/实验环境配置.md)。
+
+### 4. 分脚本指令
 
 ```bash
 PY=/home/robot/miniconda3/envs/pro/bin/python   # 以下命令前先设好
@@ -128,7 +159,7 @@ $PY edt_sanity.py
 `max slack` 是障碍软约束松弛量（S3 窄通道 > 0 属软约束正常工作点）。
 诊断图为三联图：轨迹俯视（参考折线/机器人轨迹/障碍）、全程间隙时序、控制量（线速度+角速度分面）。
 
-### 4. 常见问题
+### 5. 常见问题
 
 | 现象 | 原因与处理 |
 |---|---|
@@ -160,16 +191,20 @@ $PY edt_sanity.py
 每次推演自动落盘评测记录（docs/接口契约.md v1.2「评测记录 schema」，Python 原型与 C++ 插件同口径）：
 
 ```
-out/runs/<场景>/<seed>/       # 模拟场景 S1~S3 无 seed → dev/
-├── run.json                  # 场景/种子/消融开关快照/7 指标/QP 计时汇总/失败分类
+out/runs/<场景>/<seed>/       # 模拟场景 S1~S3 无 seed → dev/；W4 实例 seed=101..520
+├── run.json                  # 场景/种子/消融开关快照/6 指标/QP 计时汇总/失败分类/params
 └── trajectory.npz            # t / state / control / qp_ms 四数组
 ```
 
 - 消融开关快照 `{vo, esdf, slack, terminal, N, q_ratio}` 必随 run 记录落盘；
-  开关语义：`--no-vo` 动态障碍不作速度预测、`--no-esdf` 静态障碍不进 QP、
+  开关语义：`--no-vo` 动态障碍不作速度预测、`--no-esdf` 静态几何（圆+墙）不进 QP、
   `--no-slack` 障碍约束转硬约束、`--no-terminal` 关闭终端代价（真值裁判不受开关影响）。
+- `params` 自由字典记录 `MPCConfig` 调参快照（v_ref/d_safe/权重/OSQP 容差）+ 实例元信息 +
+  NavFn 折线长度；不新增 schema 字段。
 - QP 计时口径 = 每控制拍 `MPCSolver.solve` 外环一次（含 SQP 迭代）。
 - `estop_count` 恒 0（原型无安全急停层）；`smoothness` = 归一化控制量总变差。
+- W4 判读用 `summarize_runs.py` 汇总（逐场景中位数/合计 + 套件 `dynamic_stress` +
+  四阈值自查）；`dynamic_stress` 只进套件汇总，不进单 run `run.json`。
 
 ## 代码文件详解
 
@@ -181,8 +216,10 @@ W2 验收①的「一条命令」。`set -euo pipefail` 保证任何一步失败
 
 ### `run_sim.py` —— 场景入口 CLI
 
-解析命令行（`--all` / `--scenario` / `--N` / `--chassis` / `--out` / `--no-plot` / `--quiet`；消融开关 `--no-vo` / `--no-esdf` / `--no-slack` / `--no-terminal`），
+解析命令行（`--all` / `--scenario` / `--instance` / `--N` / `--chassis` / `--out` / `--no-plot` / `--quiet`；消融开关 `--no-vo` / `--no-esdf` / `--no-slack` / `--no-terminal`），
 载入底盘与 MPC 配置，逐场景调 `sim.run()`，打印验收表并画诊断图。
+`--instance <scenario>:<run>` 走加载器 + benchmark 预设，但参考是 start→goal 直线——
+**仅调试/冒烟**；W4 判读数据用 `run_w3.py`/`run_w4.sh` 的 NavFn 参考。
 
 | 函数 | 作用 |
 |---|---|
@@ -212,29 +249,55 @@ W3 验收①的「一条命令」。环境检查（pro python / ROS / Nav2）→
 → 静态 TF `map→base_link`（三场景起点均为原点）→ `run_w3.py --all --quiet`；
 `trap` 清理全部节点。`export ROS_DOMAIN_ID=42` 隔离本机 ROS 图。
 
-### `run_w3.py` —— W3 场景入口（换源编排）
+### `run_w3.py` —— W3/W4 场景入口（换源编排）
 
-| 函数 | 作用 |
+| 函数/模式 | 作用 |
 |---|---|
-| `bringup(map_yaml, ...)` | 逐场景拉起 map_server + planner_server（独立进程组；节点日志在 `out/w3_logs/`） |
+| `bringup(map_yaml, ..., params_file)` | 逐实例拉起 map_server + planner_server（独立进程组；日志在 `out/w3_logs/` 或 `out/w4_logs/`） |
 | `lifecycle_activate()` | `ros2 lifecycle set` configure→activate（带重试） |
 | `teardown(procs)` | killpg 收整组进程（`ros2 run` 的节点子进程不再成孤儿） |
-| `fetch_json(...)` | subprocess 调取源壳，解析 stdout 末行 JSON |
-| `main()` | 逐场景：bringup → 取折线（空路径有界重试 ×5）→ **`dataclasses.replace(sc, waypoints=折线)`** → `sim.run()`（零改动）→ 验收表 |
+| `fetch_navfn_path(...)` | 拉起规划栈 → 取折线（空路径有界重试 ×5）→ 收栈 |
+| `--all` / `--scenario S1\|S2\|S3` | W3 回归；使用 `nav2_w3_params.yaml` |
+| `--instance <scenario>:<run>` | W4 单实例端到端；使用 `nav2_w4_params.yaml` |
+| `--instances all\|key1,key2` + `--runs all\|1-5\|1,3` | W4 批量（调参工作集/全 20） |
+| `--suite` | 等价 `--instances all` |
+| `--map-only` | 只写实例地图并取 NavFn 路径，不推演/不落 run（100 条可行性扫描） |
+| `--save-paths` | 实例模式另存 `out/paths/<scenario_id>.json`（诊断） |
 
-换源点就是 `dataclasses.replace` 一行：`ReferencePath`/`sim.run`/验收逻辑与 W2 完全共用。
-取到折线即收 ROS 栈，推演阶段纯 numpy。
+实例模式：每 run 先 `mapping.write_map(..., name=scenario_id)` → 逐 run 重启规划栈 →
+`dataclasses.replace(sc, waypoints=折线)` → `sim.run` → `write_run(seed/run/params)`。
+NavFn/生命周期失败写 schema 同构的 `failure_class=other` 记录（`params.failure_phase`）。
+换源点仍是 `dataclasses.replace` 一行；`ReferencePath`/`sim.run`/验收逻辑与 W2 共用。
+
+### `run_w4.sh` —— W4 入口封装
+
+复制 `run_w3.sh` 的 ROS 环境检查、`ROS_DOMAIN_ID=42`、静态 TF `map→base_link`、trap 清理；
+调用 `"$PY" run_w3.py "$@"`。不跑 S1~S3 的预生成地图（实例地图由 `run_w3.py` 逐 run 写入），
+**不改 `run_w2.sh` / `run_w3.sh`**。
+
+### `check_instances.py` —— W4 加载器验收（无 ROS）
+
+12 项断言：实例表顶层/100 条/5×20/seed 公式、错误 `generator_version` 门禁、5 场景 run1
+逐字段对照原始 YAML（start/goal/waypoints/t_max/圆障碍/行人闭式位姿/墙）、box SDF 分支与
+圆障碍回归、地图栅格化（墙占据/通道自由/动态不进图）、1 s 短仿真冒烟、`write_failure` schema、CLI 解析。
+
+### `summarize_runs.py` —— W4 运行汇总
+
+读 `runs/<scenario>/<seed>/run.json`，逐场景输出成功率、到达/路径/平滑度中位数（仅成功 run）、
+最小间距中位数+最坏值、急停合计、QP mean/p95（优先池化 `trajectory.npz` 的 `qp_ms`）；
+套件级 `dynamic_stress`；`--check` 做四阈值自查（覆盖率完整 + 参数/消融/元信息一致才判定），
+并单列缺失 seed、基础设施失败与失败 run。`--md` 可落 markdown。
 
 ### `mpc_proto/mapping.py` —— 场景地图栅格化
 
 | 符号 | 作用 |
 |---|---|
-| `scenario_bounds(sc)` | 起点/目标/静态圆盘 ±r 的 bbox 外扩 1.5 m（动态障碍不进 bounds） |
-| `build_grid(sc)` | 0.05 m 栅格；**只画静态障碍**（`not o.dynamic`）；PGM 行序（row 0 = y_max） |
-| `write_map/write_all` | 写 `out/maps/<名>/<名>.{pgm,yaml}`（map_server trinary 格式） |
+| `scenario_bounds(sc)` | 起点/目标/静态圆盘 ±r/墙体四角的 bbox 外扩 1.5 m（动态障碍不进 bounds） |
+| `build_grid(sc)` | 0.05 m 栅格；**只画静态几何**（圆障碍 + 墙体；`not o.dynamic`）；PGM 行序（row 0 = y_max） |
+| `write_map/write_all` | 写 `out/maps/<名>/<名>.{pgm,yaml}`（map_server trinary）；实例模式 `name=scenario_id` |
 | `self_check(out_dir)` | 写盘回读验证：静障占据/起点目标自由/动态障碍未进图/S2 全自由 |
 
-与解析距离场同源（同一份 `Scenario.obstacles`），防两套几何漂移。
+与解析距离场同源（同一份 `Scenario`：圆障碍 + 墙体），防两套几何漂移。
 
 ### `mpc_proto/navfn_source.py` —— NavFn 取源壳（系统 Python 3.10 执行）
 
@@ -246,12 +309,17 @@ W3 验收①的「一条命令」。环境检查（pro python / ROS / Nav2）→
 约定：stdout 只出一行 JSON、日志走 stderr、成功 exit 0 / 失败 exit 2。
 **禁止被 conda 侧 import**（那边无 rclpy）；`run_w3.py` 以 `/usr/bin/python3` 调它。
 
-### `nav2_w3_params.yaml` —— W3 规划栈参数
+### `nav2_w3_params.yaml` / `nav2_w4_params.yaml` —— 规划栈参数
 
 `planner_server`（NavfnPlanner，`tolerance: 0.0` 精确到目标，Dijkstra）+
-`global_costmap`（仅 static_layer + inflation_layer，`robot_radius 0.30` /
-`inflation_radius 0.35` = 外缘 0.30 + 0.05，**无 obstacle_layer**——动态障碍永不进图）。
-map_server 的 `yaml_filename` 由命令行注入。
+`global_costmap`（仅 static_layer + inflation_layer，`robot_radius 0.30`，**无 obstacle_layer**——
+动态障碍永不进图）。map_server 的 `yaml_filename` 由命令行注入。
+
+- **W3（S1~S3）**：`inflation_radius 0.35` = 外缘 0.30 + 0.05；`cost_scaling_factor 3.0`。
+- **W4（5 场景实例）**：`inflation_radius 0.60` = robot 0.30 + `d_safe` 0.30；
+  `cost_scaling_factor 5.0`。W3 的 0.35 只是代价、不是硬约束，NavFn 会挑穿物理间隙
+  <0.3 m 的「最短折线」；W4 需要全局层先给出与局部安全余量匹配的可行折线。
+  W3 回归仍用 `nav2_w3_params.yaml`，S1~S3 存档基准不受影响。
 
 ### `mpc_proto/mpc.py` —— QP 装配与求解（核心）
 
@@ -259,7 +327,9 @@ map_server 的 `yaml_filename` 由命令行注入。
 
 | 符号 | 作用 |
 |---|---|
-| `MPCConfig` | 全部权重与开关：`N`、`dt`、`q_lat/q_long/q_theta`、`r_v/r_omega`、`r_dv/r_domega`、`terminal_factor`（≥2×）、`rho_slack`（L1 大权重）、`d_safe`、`n_sqp`（每拍 SQP 迭代数）、OSQP 容差。`Q_stage()/Q_terminal()/R()/Rd()` 产出对角权重阵 |
+| `MPCConfig` | 全部权重与开关：`N`、`dt`、`v_ref`、`q_lat/q_long/q_theta`、`r_v/r_omega`、`r_dv/r_domega`、`terminal_factor`（≥2×）、`rho_slack`（L1 大权重）、`d_safe`、`n_sqp`（每拍 SQP 迭代数）、OSQP 容差。`Q_stage()/Q_terminal()/R()/Rd()` 产出对角权重阵 |
+| `MPCConfig.benchmark(**overrides)` | W4 5 场景调参预设（唯一入口；W2/W3 默认值不动）。定稿：`d_safe=0.30`、`eps_abs=eps_rel=1e-3`、`max_iter=10000` |
+| `MPCConfig.params_snapshot()` | 调参快照（写 run.json 的 `params` 自由字典，不新增 schema 字段） |
 | `SolveResult` | 一次求解结果：`u`（本拍控制）、`success/status/fallback`、`max_slack`、`qp_iters`、`U`（全时域解，供 SQP 名义更新） |
 | `rollout(z0, u_seq, dt) -> (N+1,3)` | 非线性完美运动学零阶保持积分（`ẋ=v_x cosθ−v_y sinθ` 等）；既做名义轨迹又做仿真真值 |
 | `MPCSolver` | 求解器状态机：持 `u_prev`（增量约束用）、`fallback_streak`、`alarm` |
@@ -287,20 +357,23 @@ map_server 的 `yaml_filename` 由命令行注入。
 | 符号 | 作用 |
 |---|---|
 | `Obstacle` | 单圆近似障碍（契约 `ObstacleState` 的脚本数据形态）：`p0` 当前位置、`v` 速度（静态=0）、`radius`；`center_at(tau)` = 匀速直线短期预测（VO 管道的预测中心） |
-| `clearance(p, obs, tau, r_r) -> Clearance` | 解析外缘间隙 `d = ‖p−c‖ − (r_j+r_r)` 与解析梯度 `∇d = (p−c)/‖p−c‖`；`‖p−c‖<1e-9` 奇异保护取 (0,1) |
-| `min_clearance(p, obstacles, tau, r_r)` | 多障碍取最小间隙（验收③与诊断图用） |
+| `Wall` | 轴对齐实心矩形墙（契约 `walls: {x0,y0,x1,y1}`，含壁厚）；`signed_distance(p)` = 欧氏 box 有符号距离 + 外法向梯度 |
+| `clearance(p, obs, tau, r_r) -> Clearance` | 圆：`d = ‖p−c‖ − (r_j+r_r)`、`∇d = (p−c)/‖p−c‖`；墙：`d = box_sdf − r_r`、`∇d = ∇box_sdf`；圆奇异保护取 (0,1) |
+| `min_clearance(p, obstacles, tau, r_r)` | 圆/墙混合列表取最小间隙（验收③与诊断图用） |
 
 ### `mpc_proto/scenarios.py` —— 场景定义
 
 | 符号 | 作用 |
 |---|---|
-| `Scenario` | 场景数据包：`start/goal`（3 维位姿）、`waypoints`（参考几何）、`obstacles`、`t_max` 时限 |
+| `Scenario` | 场景数据包：`start/goal`（3 维位姿）、`waypoints`（参考几何）、`obstacles`（圆+行人）、`walls`、`t_max` 时限 |
 | `s1_static_avoid()` | S1 静态绕障：静障 (4,0) r=0.6，参考折线从上方绕 |
 | `s2_dynamic_crossing()` | S2 动态横穿：行人 (4,−4.9) 以 0.7 m/s 横穿，直参考，约 t≈7 s 相遇 |
 | `s3_mixed_passage()` | S3 静+动混合（双障碍）：通道静障 (5,0.8) + 对向动障 0.7 m/s |
-| `ALL` / `by_name(name)` | 场景清单与按名取用 |
+| `ALL` / `by_name(name)` | 模拟场景清单与按名取用 |
+| `load_instance/load_instances` | W4 实例表只读加载：2.0.0 门禁、十字段/seed/几何校验、行人闭式常速映射、墙 → `Wall`；返回 `(Scenario, InstanceMeta)` |
+| `parse_instance_arg` / `parse_runs_spec` | CLI `--instance` / `--runs` 解析 |
 
-改场景坐标/参考 waypoints 就改这里（W2 落地参数，与 docs/MPC公式化.md §9 一致）。
+S1~S3 是模拟场景（不进基准评分）；W4 实例改场景数值只能改表（工程线资产，算法侧只读）。
 
 ### `mpc_proto/sim.py` —— 滚动推演引擎
 
@@ -317,9 +390,10 @@ map_server 的 `yaml_filename` 由命令行注入。
 
 `plot_run(scenario, chassis, res, out_path)` 出单场景三合一 PNG（`out/<场景>.png`）：
 
-1. **轨迹俯视**：参考折线（弱化灰虚线）+ 机器人轨迹（蓝）+ 障碍（静态青/动态黄，
-   动态画 1 s 间隔拖尾，只画到推演结束）+ 起点/目标标注
-2. **全程间隙时序**：外缘间隙（真值几何）+ 0 接触边界（状态红虚线）+ d_safe=0.20 参考线
+1. **轨迹俯视**：参考折线（弱化灰虚线）+ 机器人轨迹（蓝）+ 障碍（静态青/动态黄）+
+   墙体矩形 + 起点/目标标注；动态拖尾按静态几何窗口裁剪（行人 t=0 锚点可能离行进线 6~10 m）
+2. **全程间隙时序**：外缘间隙（真值几何）+ 0 接触边界（状态红虚线）+ `d_safe` 参考线
+   （`plot_run(..., d_safe=cfg.d_safe)`）
 3. **控制量**：线速度 v_x/v_y 与角速度 ω **分面**（单轴原则，不双轴）
 
 配色用已校验默认色板分类槽位（固定顺序 蓝/青/黄），中文用 Noto Sans CJK。
