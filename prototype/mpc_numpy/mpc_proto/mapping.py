@@ -1,7 +1,7 @@
-"""W3 地图栅格化：场景几何 → PGM+YAML（map_server 消费，docs/MPC公式化.md §12）。
+"""W3/W4 地图栅格化：场景几何 → PGM+YAML（map_server 消费，docs/MPC公式化.md §12）。
 
-与解析距离场（distance.py）同一份 Scenario.obstacles 数据，防两套几何漂移。
-只画静态障碍（v=0 的 Obstacle）；动态障碍永不进图、不进 bounds
+与解析距离场（distance.py）同一份 Scenario 数据，防两套几何漂移。
+只画静态几何（v=0 的 Obstacle + 轴对齐墙体）；动态障碍永不进图、不进 bounds
 （动态避让归 MPC 的 VO，NavFn 看不见行人）。
 """
 from __future__ import annotations
@@ -20,12 +20,15 @@ FREE, OCCUPIED = 254, 0  # PGM 像素值（map_server trinary 约定）
 
 
 def scenario_bounds(sc: Scenario, margin: float = BOUND_MARGIN) -> tuple[float, float, float, float]:
-    """(xmin, ymin, xmax, ymax)：起点/目标/静态圆盘 ±radius 的 bbox 外扩 margin。"""
+    """(xmin, ymin, xmax, ymax)：起点/目标/静态圆盘 ±radius/墙体四角的 bbox 外扩 margin。"""
     pts = [np.asarray(sc.start[:2], dtype=float), np.asarray(sc.goal[:2], dtype=float)]
     for o in sc.obstacles:
         if not o.dynamic:
             pts.append(np.asarray(o.p0) - o.radius)
             pts.append(np.asarray(o.p0) + o.radius)
+    for w in sc.walls:
+        pts.append(np.array([w.x0, w.y0]))
+        pts.append(np.array([w.x1, w.y1]))
     arr = np.vstack(pts)
     xmin, ymin = arr.min(axis=0) - margin
     xmax, ymax = arr.max(axis=0) + margin
@@ -48,23 +51,31 @@ def build_grid(sc: Scenario, resolution: float = RESOLUTION) -> tuple[np.ndarray
     for o in sc.obstacles:
         if not o.dynamic:
             occ |= (X - o.p0[0]) ** 2 + (Y - o.p0[1]) ** 2 <= o.radius**2
+    for wall in sc.walls:  # 轴对齐实心矩形（含壁厚），不做额外膨胀——inflation 归 costmap
+        occ |= (X >= wall.x0) & (X <= wall.x1) & (Y >= wall.y0) & (Y <= wall.y1)
     grid = np.where(occ, OCCUPIED, FREE).astype(np.uint8)
     return np.flipud(grid), (xmin, ymin)
 
 
-def write_map(sc: Scenario, out_dir: Path, resolution: float = RESOLUTION) -> Path:
-    """写 out_dir/{name}/{name}.pgm + {name}.yaml，返回 yaml 路径。"""
-    out = Path(out_dir) / sc.name
+def write_map(
+    sc: Scenario, out_dir: Path, resolution: float = RESOLUTION, name: str | None = None
+) -> Path:
+    """写 out_dir/{name}/{name}.pgm + {name}.yaml，返回 yaml 路径。
+
+    name 缺省用 sc.name；基准实例传 scenario_id（各 run 地图互不覆盖）。
+    """
+    map_name = name or sc.name
+    out = Path(out_dir) / map_name
     out.mkdir(parents=True, exist_ok=True)
     grid, (xmin, ymin) = build_grid(sc, resolution)
     h, w = grid.shape
-    pgm = out / f"{sc.name}.pgm"
+    pgm = out / f"{map_name}.pgm"
     with open(pgm, "wb") as f:
         f.write(f"P5\n{w} {h}\n255\n".encode("ascii"))
         f.write(grid.tobytes())
-    yaml_path = out / f"{sc.name}.yaml"
+    yaml_path = out / f"{map_name}.yaml"
     yaml_path.write_text(
-        f"image: {sc.name}.pgm\n"
+        f"image: {map_name}.pgm\n"
         f"resolution: {resolution}\n"
         f"origin: [{xmin:.4f}, {ymin:.4f}, 0.0]\n"
         "negate: 0\n"

@@ -12,6 +12,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.patches import Rectangle
 
 # 色板（references/palette.md，light mode）
 SURFACE = "#fcfcfb"
@@ -53,7 +54,7 @@ def _style(ax):
         ax.spines[side].set_visible(False)
 
 
-def plot_run(scenario, chassis, res, out_path: Path):
+def plot_run(scenario, chassis, res, out_path: Path, d_safe: float = 0.20):
     """单场景诊断图：轨迹俯视 / 间隙时序 / 控制量时序（速度、角速度分面）。"""
     fig = plt.figure(figsize=(12, 9))
     gs = fig.add_gridspec(3, 2, height_ratios=[1.2, 1.0, 1.0], hspace=0.35, wspace=0.25)
@@ -70,35 +71,68 @@ def plot_run(scenario, chassis, res, out_path: Path):
     )
     if res.zs.shape[0]:
         ax_traj.plot(res.zs[:, 0], res.zs[:, 1], color=S1, lw=1.8, label="机器人轨迹", zorder=4)
-    # 动态障碍拖尾只画到推演结束（避免按 t_max 画满把坐标轴拉爆）
-    t_end = float(res.t_ctrl[-1]) if res.t_ctrl.size else scenario.t_max
-    pts = [wp, res.zs[:, :2] if res.zs.shape[0] else wp]
+
+    # 坐标范围只由静态几何决定：行人 t=0 锚点可能离行进线 6~10 m，
+    # 若计入会把图拉爆；动态拖尾稍后按窗口裁剪绘制。
+    static_pts = [wp, res.zs[:, :2] if res.zs.shape[0] else wp]
+    dynamic_trails = []
     for obs in scenario.obstacles:
-        c0 = obs.p0
         col = S2 if not obs.dynamic else S3
         if obs.dynamic:
+            t_end = float(res.t_ctrl[-1]) if res.t_ctrl.size else scenario.t_max
             ts = np.arange(0.0, t_end + 1e-9, 1.0)
-            trail = np.array([obs.center_at(t) for t in ts])
-            ax_traj.plot(trail[:, 0], trail[:, 1], color=col, lw=1.2, alpha=0.85, zorder=3)
-            ax_traj.scatter(trail[::2, 0], trail[::2, 1], s=18, color=col, zorder=3)
-            pts.append(trail)
+            dynamic_trails.append((np.array([obs.center_at(t) for t in ts]), col, obs))
+            continue
+        c0 = obs.p0
         circ = plt.Circle(c0, obs.radius, facecolor=col, edgecolor=col, alpha=0.35, lw=1.4, zorder=1)
         ax_traj.add_patch(circ)
-        pts.append(np.array([[c0[0] - obs.radius, c0[1] - obs.radius], [c0[0] + obs.radius, c0[1] + obs.radius]]))
+        static_pts.append(np.array([
+            [c0[0] - obs.radius, c0[1] - obs.radius],
+            [c0[0] + obs.radius, c0[1] + obs.radius],
+        ]))
         ax_traj.annotate(
-            ("静障" if not obs.dynamic else "动障") + f"#{obs.obs_id}",
+            f"静障#{obs.obs_id}",
             (c0[0], c0[1] + obs.radius + 0.12),
             color=INK_2, fontsize=9, ha="center",
         )
+    for i, wall in enumerate(scenario.walls, start=1):
+        w, h = wall.x1 - wall.x0, wall.y1 - wall.y0
+        ax_traj.add_patch(
+            Rectangle((wall.x0, wall.y0), w, h, facecolor=S2, edgecolor=INK_2,
+                      alpha=0.35, lw=1.2, zorder=1, label="墙体")
+        )
+        static_pts.append(np.array([[wall.x0, wall.y0], [wall.x1, wall.y1]]))
+        ax_traj.annotate(
+            f"墙#{i}", (wall.center[0], wall.y1 + 0.12), color=INK_2, fontsize=9, ha="center"
+        )
+
     ax_traj.scatter(*scenario.start[:2], marker="o", s=55, facecolor="none", edgecolor=INK, zorder=5)
     ax_traj.annotate("起点", scenario.start[:2] + np.array([0.15, -0.4]), color=INK, fontsize=9)
     ax_traj.scatter(*scenario.goal[:2], marker="*", s=110, color=INK, zorder=5)
     ax_traj.annotate("目标", scenario.goal[:2] + np.array([0.15, -0.4]), color=INK, fontsize=9)
-    all_pts = np.vstack(pts)
+    all_pts = np.vstack(static_pts)
     pad = 0.6
-    ax_traj.set_xlim(all_pts[:, 0].min() - pad, all_pts[:, 0].max() + pad)
-    ax_traj.set_ylim(all_pts[:, 1].min() - pad, all_pts[:, 1].max() + pad)
+    xmin, xmax = all_pts[:, 0].min() - pad, all_pts[:, 0].max() + pad
+    ymin, ymax = all_pts[:, 1].min() - pad, all_pts[:, 1].max() + pad
+    ax_traj.set_xlim(xmin, xmax)
+    ax_traj.set_ylim(ymin, ymax)
     ax_traj.set_aspect("equal", adjustable="box")
+
+    # 动态拖尾：只画落在窗口内的部分（相遇段），不参与坐标范围
+    for trail, col, obs in dynamic_trails:
+        inside = (
+            (trail[:, 0] >= xmin) & (trail[:, 0] <= xmax)
+            & (trail[:, 1] >= ymin) & (trail[:, 1] <= ymax)
+        )
+        vis = trail[inside]
+        if vis.shape[0]:
+            ax_traj.plot(vis[:, 0], vis[:, 1], color=col, lw=1.2, alpha=0.85, zorder=3)
+            ax_traj.scatter(vis[::2, 0], vis[::2, 1], s=18, color=col, zorder=3)
+            ax_traj.annotate(
+                f"动障#{obs.obs_id}", (vis[0, 0], vis[0, 1] + 0.15),
+                color=INK_2, fontsize=9, ha="center",
+            )
+
     ax_traj.set_xlabel("x [m]")
     ax_traj.set_ylabel("y [m]")
     ax_traj.set_title(f"{scenario.name} 轨迹俯视（{scenario.desc}）")
@@ -110,7 +144,7 @@ def plot_run(scenario, chassis, res, out_path: Path):
         t_c = np.arange(res.clearances.size) * 0.01  # dt_sim = 0.01
         ax_clear.plot(t_c, res.clearances, color=S1, lw=1.8)
         ax_clear.axhline(0.0, color=CRITICAL, lw=1.4, linestyle=(0, (4, 3)), label="0（接触边界）")
-        ax_clear.axhline(0.20, color=MUTED, lw=1.2, linestyle=(0, (2, 3)), label="d_safe=0.20")
+        ax_clear.axhline(d_safe, color=MUTED, lw=1.2, linestyle=(0, (2, 3)), label=f"d_safe={d_safe:.2f}")
     ax_clear.set_ylabel("外缘间隙 [m]")
     ax_clear.set_xlabel("t [s]")
     ax_clear.set_title("全程间隙（真值几何）")

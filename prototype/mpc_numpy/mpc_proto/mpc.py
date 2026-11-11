@@ -13,7 +13,7 @@ import osqp
 from scipy import sparse
 
 from .chassis import Chassis
-from .distance import Obstacle, clearance
+from .distance import Obstacle, Wall, clearance
 from .reference import ReferencePath
 
 log = logging.getLogger("mpc_proto")
@@ -23,6 +23,7 @@ log = logging.getLogger("mpc_proto")
 class MPCConfig:
     N: int = 40
     dt: float = 0.05
+    v_ref: float = 0.6  # 参考时间律速度（sim.py 消费；W4 基准预设可调）
     # 七项代价栈权重（docs/MPC公式化.md §4；q_long ≤ 0.1·q_lat）
     q_lat: float = 4.0
     q_long: float = 0.4
@@ -57,6 +58,41 @@ class MPCConfig:
 
     def Rd(self) -> np.ndarray:
         return np.diag([self.r_dv, self.r_dv, self.r_domega])
+
+    @classmethod
+    def benchmark(cls, **overrides) -> "MPCConfig":
+        """5 基准场景调参预设（W4 唯一入口）。
+
+        默认值与 W2 配置相同，保证 S1~S3 回归存档基准不动；调参只改下面
+        `tuned` 字典，实例跑（run_sim/run_w3 的 --instance 模式）统一消费。
+        """
+        tuned: dict = {
+            # 例：d_safe=0.30, rho_slack=120.0（按 W4 前 5 工作集实测再定）
+        }
+        tuned.update(overrides)
+        cfg = cls(**tuned)
+        if cfg.q_long > 0.1 * cfg.q_lat + 1e-12:
+            raise ValueError("q_long 必须 ≤ 0.1·q_lat（方案书口径）")
+        return cfg
+
+    def params_snapshot(self) -> dict:
+        """调参快照（写入 run.json 的 params 自由字典，不新增 schema 字段）。"""
+        return {
+            "N": self.N,
+            "dt": self.dt,
+            "v_ref": self.v_ref,
+            "q_lat": self.q_lat,
+            "q_long": self.q_long,
+            "q_theta": self.q_theta,
+            "r_v": self.r_v,
+            "r_omega": self.r_omega,
+            "r_dv": self.r_dv,
+            "r_domega": self.r_domega,
+            "terminal_factor": self.terminal_factor,
+            "rho_slack": self.rho_slack,
+            "d_safe": self.d_safe,
+            "n_sqp": self.n_sqp,
+        }
 
 
 @dataclass
@@ -121,7 +157,7 @@ class MPCSolver:
     def solve(
         self,
         z0: np.ndarray,
-        obstacles: list[Obstacle],
+        obstacles: list[Obstacle | Wall],
         reference: ReferencePath,
         t_now: float = 0.0,
     ) -> SolveResult:
@@ -177,7 +213,7 @@ class MPCSolver:
         zbar: np.ndarray,
         ubar: np.ndarray,
         z_ref: np.ndarray,
-        obstacles: list[Obstacle],
+        obstacles: list[Obstacle | Wall],
     ) -> SolveResult:
         cfg, ch = self.cfg, self.chassis
         N, dt = cfg.N, cfg.dt

@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from .chassis import Chassis
-from .distance import Obstacle, clearance, min_clearance
+from .distance import Obstacle, Wall, clearance, min_clearance
 from .mpc import MPCConfig, MPCSolver, rollout
 from .reference import ReferencePath, wrap_angle
 from .scenarios import Scenario
@@ -64,10 +64,12 @@ def run(
     ref = ReferencePath(
         waypoints=scenario.waypoints,
         goal_yaw=float(scenario.goal[2]),
-        v_ref=0.6,
+        v_ref=cfg.v_ref,
         N=cfg.N,
         dt=cfg.dt,
     )
+    # 真值裁判对象 = 场景几何（圆障碍 + 行人 + 墙体）；消融开关只改控制器输入
+    truth_geometry: list[Obstacle | Wall] = [*scenario.obstacles, *scenario.walls]
 
     z = scenario.start.astype(float).copy()
     dt_ctrl = cfg.dt
@@ -97,6 +99,8 @@ def run(
                 continue  # esdf=False：静态障碍不进 QP 约束
             else:
                 obs_now.append(Obstacle(o.obs_id, o.center_at(t), o.v, o.radius))
+        if cfg.esdf:
+            obs_now.extend(scenario.walls)  # 墙 = 静态几何：--no-esdf 时与圆障碍同步退出 QP
         t0 = time.perf_counter()
         res = solver.solve(z, obs_now, ref, t_now=t)
         qp_ms.append((time.perf_counter() - t0) * 1e3)
@@ -124,7 +128,7 @@ def run(
             tau = t + s * dt_sub
             z = rollout(z, u.reshape(1, 3), dt_sub)[1]
             clearances.append(
-                min_clearance(z[:2], scenario.obstacles, tau, chassis.radius)
+                min_clearance(z[:2], truth_geometry, tau, chassis.radius)
             )
             path_length += float(np.linalg.norm(z[:2] - p_prev))
             p_prev = z[:2].copy()
@@ -133,12 +137,12 @@ def run(
             print(
                 f"  [{scenario.name}] t={t:5.2f}s pos=({z[0]:6.2f},{z[1]:6.2f}) "
                 f"u=({u[0]:5.2f},{u[1]:5.2f},{u[2]:5.2f}) "
-                f"clear={min_clearance(z[:2], scenario.obstacles, t, chassis.radius):5.3f}"
+                f"clear={min_clearance(z[:2], truth_geometry, t, chassis.radius):5.3f}"
             )
 
     # 到达时刻的最终间隙记录（若循环 break，补最后细步不必要；clearances 已含全程）
     if arrived and not clearances:
-        clearances.append(min_clearance(z[:2], scenario.obstacles, t_arrival, chassis.radius))
+        clearances.append(min_clearance(z[:2], truth_geometry, t_arrival, chassis.radius))
 
     us_arr = np.asarray(us).reshape(-1, 3)
     # 归一化控制量总变差（指标 4 口径，控制序列 20 Hz）
