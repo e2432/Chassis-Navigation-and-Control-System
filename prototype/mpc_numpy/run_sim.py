@@ -4,8 +4,12 @@
 用法（conda pro 环境）：
   python run_sim.py --all                 # 三场景 + 验收表 + 诊断图
   python run_sim.py --scenario S2 --N 20
+  python run_sim.py --instance static_avoid:1   # W4 实例冒烟（直线名义参考）
   python run_sim.py --all --chassis chassis/diff.yaml   # 迁移冒烟预演（vy_max=0）
 退出码 0 ⟺ 全部场景过验收②③④（①一条命令由 run_w2.sh 保证）。
+
+注意：--instance 走加载器默认的 start→goal 直线参考，仅作管线冒烟/调试；
+5 场景判读数据必须走 run_w3.py（NavFn 参考，静态绕行几何由全局层给出）。
 """
 from __future__ import annotations
 
@@ -22,7 +26,7 @@ from mpc_proto.chassis import load_chassis
 from mpc_proto.mpc import MPCConfig
 from mpc_proto.plotting import plot_run
 from mpc_proto.runlog import write_run
-from mpc_proto.scenarios import ALL, by_name
+from mpc_proto.scenarios import ALL, by_name, load_instance, parse_instance_arg
 from mpc_proto.sim import RunResult, run
 
 
@@ -56,6 +60,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="W2 numpy MPC 开环模拟")
     ap.add_argument("--all", action="store_true", help="跑 S1/S2/S3 全部场景")
     ap.add_argument("--scenario", choices=["S1", "S2", "S3"], help="单场景")
+    ap.add_argument(
+        "--instance",
+        metavar="<scenario>:<run>",
+        help="W4 基准实例（直线名义参考，仅调试/冒烟；判读用 run_w3.py）",
+    )
     ap.add_argument("--N", type=int, default=40, help="预测时域步数（初值 40）")
     ap.add_argument("--chassis", default=str(ROOT / "chassis/omni.yaml"))
     ap.add_argument("--out", default=str(ROOT / "out"))
@@ -67,17 +76,30 @@ def main() -> int:
     ap.add_argument("--quiet", action="store_true", help="不打印逐步日志")
     args = ap.parse_args()
 
-    if not args.all and not args.scenario:
-        ap.error("需 --all 或 --scenario")
+    if sum(bool(x) for x in (args.all, args.scenario, args.instance)) != 1:
+        ap.error("需 --all / --scenario / --instance 三选一")
 
     chassis = load_chassis(args.chassis)
-    cfg = MPCConfig(
+    ablate = dict(
         N=args.N,
         vo=not args.no_vo,
         esdf=not args.no_esdf,
         slack=not args.no_slack,
         terminal=not args.no_terminal,
     )
+    if args.instance:
+        key, run_no = parse_instance_arg(args.instance)
+        sc, meta = load_instance(key, run_no)
+        cfg = MPCConfig.benchmark(**ablate)
+        specs = [(sc, meta)]
+        print(
+            f"W4 实例 {meta.scenario_id}（直线名义参考——仅调试/冒烟；"
+            f"判读数据请用 run_w3.py --instance）"
+        )
+    else:
+        cfg = MPCConfig(**ablate)
+        fns = list(ALL) if args.all else [lambda: by_name(args.scenario)]
+        specs = [(fn(), None) for fn in fns]
     out_dir = Path(args.out)
     print(
         f"MPC 开环模拟 | N={cfg.N} dt={cfg.dt}s 视界={cfg.N * cfg.dt:.1f}s | "
@@ -85,19 +107,25 @@ def main() -> int:
         f"q=({cfg.q_lat},{cfg.q_long},{cfg.q_theta}) ρ={cfg.rho_slack} d_safe={cfg.d_safe}"
     )
 
-    scenes = list(ALL) if args.all else [lambda: by_name(args.scenario)]
     rows = []
     all_pass = True
-    for fn in scenes:
-        sc = fn()
+    for sc, meta in specs:
         print(f"\n=== {sc.name} {sc.desc} ===")
         res = run(sc, chassis, cfg, log_every=0 if args.quiet else 100)
-        run_dir = write_run(out_dir, sc.name, cfg, res)
+        if meta is not None:
+            params = {**cfg.params_snapshot(), "preset": "benchmark"}
+            run_dir = write_run(
+                out_dir, meta.scenario, cfg, res, seed=meta.seed, run=meta.run, params=params
+            )
+            plot_path = out_dir / f"{meta.scenario_id}.png"
+        else:
+            run_dir = write_run(out_dir, sc.name, cfg, res)
+            plot_path = out_dir / f"{sc.name}.png"
         print(f"  run 记录 → {run_dir}")
         rows.append(fmt_row(res))
         all_pass &= res.acceptance_pass() and res.arrived
         if not args.no_plot:
-            p = plot_run(sc, chassis, res, out_dir / f"{sc.name}.png")
+            p = plot_run(sc, chassis, res, plot_path, d_safe=cfg.d_safe)
             print(f"  诊断图 → {p}")
 
     print_table(rows)
