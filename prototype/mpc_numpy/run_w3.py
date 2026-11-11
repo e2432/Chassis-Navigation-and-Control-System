@@ -102,7 +102,9 @@ def fail_row(name: str, reason: str) -> dict:
     }
 
 
-def bringup(map_yaml: Path, log_dir: Path, name: str) -> list[subprocess.Popen]:
+def bringup(
+    map_yaml: Path, log_dir: Path, name: str, params_file: Path
+) -> list[subprocess.Popen]:
     """逐实例拉起 map_server + planner_server；各自独立进程组（teardown 用 killpg）。"""
     log_dir.mkdir(parents=True, exist_ok=True)
     procs = []
@@ -110,7 +112,7 @@ def bringup(map_yaml: Path, log_dir: Path, name: str) -> list[subprocess.Popen]:
                      ("nav2_planner planner_server", f"{name}_planner.log")):
         pkg, node = exe.split()
         cmd = ["ros2", "run", pkg, node, "--ros-args",
-               "--params-file", str(ROOT / "nav2_w3_params.yaml")]
+               "--params-file", str(params_file)]
         if node == "map_server":
             cmd += ["-p", f"yaml_filename:={map_yaml}"]
         f = open(log_dir / log, "w")
@@ -153,10 +155,10 @@ def teardown(procs: list[subprocess.Popen]) -> None:
 
 
 def fetch_navfn_path(
-    sc0: Scenario, map_yaml: Path, log_dir: Path, tag: str, args
+    sc0: Scenario, map_yaml: Path, log_dir: Path, tag: str, args, params_file: Path
 ) -> tuple[np.ndarray | None, float, str | None]:
     """一次拉起规划栈 → 取折线 → 收栈；失败返回 (None, 0, reason)。"""
-    procs = bringup(map_yaml, log_dir, tag)
+    procs = bringup(map_yaml, log_dir, tag, params_file)
     try:
         time.sleep(2.0)  # 节点服务就绪
         if not lifecycle_activate():
@@ -227,10 +229,13 @@ def main() -> int:
     mode.add_argument("--suite", action="store_true", help="W4 5 场景全实例（等价 --instances all）")
     ap.add_argument("--runs", default=None, help="实例 run 过滤：all / 1-5 / 1,3,5（仅 --instances/--suite）")
     ap.add_argument("--map-only", action="store_true", help="只写图并取 NavFn 路径，不推演/不落 run（实例模式）")
+    ap.add_argument("--save-paths", action="store_true", help="实例模式：NavFn 折线另存 <out>/paths/<scenario_id>.json（诊断用）")
     ap.add_argument("--N", type=int, default=40, help="预测时域步数（定死 40）")
     ap.add_argument("--chassis", default=str(ROOT / "chassis/omni.yaml"))
     ap.add_argument("--out", default=str(ROOT / "out"))
     ap.add_argument("--map-dir", default=str(ROOT / "out/maps"))
+    ap.add_argument("--params-file", default=None,
+                    help="Nav2 规划栈参数（缺省：S1~S3 用 nav2_w3_params.yaml，实例模式用 nav2_w4_params.yaml）")
     ap.add_argument("--sys-python", default="/usr/bin/python3")
     ap.add_argument("--fetcher", default=str(ROOT / "mpc_proto/navfn_source.py"))
     ap.add_argument("--action-timeout", type=float, default=30.0)
@@ -273,10 +278,17 @@ def main() -> int:
 
     out_dir = Path(args.out)
     map_dir = Path(args.map_dir)
+    params_file = (
+        Path(args.params_file) if args.params_file
+        else ROOT / ("nav2_w4_params.yaml" if instance_mode else "nav2_w3_params.yaml")
+    )
+    if not params_file.is_file():
+        print(f"找不到 Nav2 参数文件：{params_file}", file=sys.stderr)
+        return 2
     print(
         f"MPC {'W4 实例（NavFn 真参考）' if instance_mode else 'W3（NavFn 真参考）'} | "
         f"N={cfg.N} dt={cfg.dt}s v_ref={cfg.v_ref} d_safe={cfg.d_safe} | "
-        f"chassis={chassis.type} r={chassis.radius} | 共 {len(specs)} 条"
+        f"chassis={chassis.type} r={chassis.radius} | params={params_file.name} | 共 {len(specs)} 条"
     )
 
     base_params = {**cfg.params_snapshot(), "preset": "benchmark"} if instance_mode else {}
@@ -301,7 +313,7 @@ def main() -> int:
             seed = run_no = None
 
         map_attempted += 1
-        wps, length, reason = fetch_navfn_path(sc0, map_yaml, log_dir, tag, args)
+        wps, length, reason = fetch_navfn_path(sc0, map_yaml, log_dir, tag, args, params_file)
         if wps is None:
             print(f"  ✗ {reason}")
             infra_failures += 1
@@ -324,6 +336,14 @@ def main() -> int:
             goal_err = float(np.linalg.norm(wps[-1] - sc0.goal[:2]))
         print(f"  NavFn {tag}: M={len(wps)}, L={length:.2f} m, "
               f"端点误差 start={start_err:.3f} goal={goal_err:.3f}")
+
+        if meta is not None and args.save_paths:
+            path_dir = out_dir / "paths"
+            path_dir.mkdir(parents=True, exist_ok=True)
+            (path_dir / f"{tag}.json").write_text(
+                json.dumps({"waypoints": wps.tolist(), "length": length}, ensure_ascii=False),
+                encoding="utf-8",
+            )
 
         if args.map_only:
             continue
