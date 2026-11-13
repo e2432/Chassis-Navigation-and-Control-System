@@ -1,0 +1,92 @@
+[INFO] [launch]: All log files can be found below /home/robot/.ros/log/2026-11-13-16-02-24-809631-wp-57642
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [launch.user]: [W5 D3] mpc_controller smoke: chassis_type=diff base_yaw_deg=90.0 map=(0.0,0.0,0.0) publish_map_odom=true map_odom_dynamic_seconds=0.0 tf_failure_expected=false
+[INFO] [fake_sensors.py-1]: process started with pid [57643]
+[INFO] [mock_obstacle_heartbeat.py-2]: process started with pid [57645]
+[INFO] [controller_server-3]: process started with pid [57647]
+[INFO] [lifecycle_manager-4]: process started with pid [57649]
+[INFO] [smoke_check.py-5]: process started with pid [57651]
+[lifecycle_manager-4] [INFO] [1794556944.868695418] [lifecycle_manager_mpc]: Creating
+[lifecycle_manager-4] [INFO] [1794556944.870114084] [lifecycle_manager_mpc]: [34m[1mCreating and initializing lifecycle service clients[0m[0m
+[controller_server-3] [INFO] [1794556944.870860584] [controller_server]: 
+[controller_server-3] 	controller_server lifecycle node launched. 
+[controller_server-3] 	Waiting on external lifecycle transitions to activate
+[controller_server-3] 	See https://design.ros2.org/articles/node_lifecycle.html for more information.
+[lifecycle_manager-4] [INFO] [1794556944.871048261] [lifecycle_manager_mpc]: [34m[1mStarting managed nodes bringup...[0m[0m
+[lifecycle_manager-4] [INFO] [1794556944.871078624] [lifecycle_manager_mpc]: [34m[1mConfiguring controller_server[0m[0m
+[controller_server-3] [INFO] [1794556944.873998711] [controller_server]: Creating controller server
+[controller_server-3] [INFO] [1794556944.876681455] [local_costmap.local_costmap]: 
+[controller_server-3] 	local_costmap lifecycle node launched. 
+[controller_server-3] 	Waiting on external lifecycle transitions to activate
+[controller_server-3] 	See https://design.ros2.org/articles/node_lifecycle.html for more information.
+[controller_server-3] [INFO] [1794556944.876911148] [local_costmap.local_costmap]: Creating Costmap
+[controller_server-3] [INFO] [1794556944.877171522] [controller_server]: Configuring controller interface
+[controller_server-3] [INFO] [1794556944.877193504] [controller_server]: getting goal checker plugins..
+[controller_server-3] [INFO] [1794556944.877207356] [controller_server]: Controller frequency set to 20.0000Hz
+[controller_server-3] [INFO] [1794556944.877218534] [local_costmap.local_costmap]: Configuring
+[controller_server-3] [INFO] [1794556944.878653317] [local_costmap.local_costmap]: Using plugin "obstacle_layer"
+[controller_server-3] [INFO] [1794556944.880342772] [local_costmap.local_costmap]: Subscribed to Topics: scan
+[controller_server-3] [INFO] [1794556944.881171647] [local_costmap.local_costmap]: Initialized plugin "obstacle_layer"
+[controller_server-3] [INFO] [1794556944.881183054] [local_costmap.local_costmap]: Using plugin "inflation_layer"
+[controller_server-3] [INFO] [1794556944.881323257] [local_costmap.local_costmap]: Initialized plugin "inflation_layer"
+[controller_server-3] [INFO] [1794556944.883845672] [controller_server]: Created progress_checker : progress_checker of type nav2_controller::SimpleProgressChecker
+[controller_server-3] [INFO] [1794556944.884054210] [controller_server]: Created goal checker : general_goal_checker of type nav2_controller::SimpleGoalChecker
+[controller_server-3] [INFO] [1794556944.884108498] [controller_server]: Controller Server has general_goal_checker  goal checkers available.
+[controller_server-3] [INFO] [1794556944.885069415] [controller_server]: Created controller : FollowPath of type mpc_controller::MpcController
+[controller_server-3] [INFO] [1794556944.886527573] [controller_server]: [FollowPath] chassis type=diff radius=0.30 v=[-1.00, 1.00] vy_max=0.00 omega_max=1.50
+[controller_server-3] [INFO] [1794556944.886545549] [controller_server]: [FollowPath] follower: desired_linear_vel=0.60 lookahead_dist=0.50 rotation_gain=2.00 obstacle_timeout=0.50 transform_tolerance=0.20
+[controller_server-3] [INFO] [1794556944.886552825] [controller_server]: Controller Server has FollowPath  controllers available.
+[lifecycle_manager-4] [INFO] [1794556944.888134006] [lifecycle_manager_mpc]: [34m[1mActivating controller_server[0m[0m
+[controller_server-3] [INFO] [1794556944.888191940] [controller_server]: Activating
+[controller_server-3] [INFO] [1794556944.888207114] [local_costmap.local_costmap]: Activating
+[controller_server-3] [INFO] [1794556944.888212600] [local_costmap.local_costmap]: Checking transform
+[controller_server-3] [INFO] [1794556944.888222481] [local_costmap.local_costmap]: Timed out waiting for transform from base_footprint to odom to become available, tf error: Invalid frame ID "odom" passed to canTransform argument target_frame - frame does not exist
+[mock_obstacle_heartbeat.py-2] [INFO] [1794556945.047515753] [mock_obstacle_heartbeat]: mock heartbeat on /mpc/obstacles at 10.0 Hz; enabled=False
+[fake_sensors.py-1] [INFO] [1794556945.103210394] [fake_sensors]: fake sensors: odom->base_footprint yaw=1.571 rad; map_odom=True dynamic=False (0.00, 0.00, 0.000 rad)
+[controller_server-3] [INFO] [1794556945.388375569] [local_costmap.local_costmap]: start
+[controller_server-3] [INFO] [1794556945.638824621] [controller_server]: [FollowPath] activate
+[controller_server-3] [INFO] [1794556945.638873414] [controller_server]: Creating bond (controller_server) to lifecycle manager.
+[lifecycle_manager-4] [INFO] [1794556945.640112337] [lifecycle_manager_mpc]: [34m[1mManaged nodes are active[0m[0m
+[controller_server-3] [INFO] [1794556945.929513498] [controller_server]: Received a goal, begin computing control effort.
+[controller_server-3] [WARN] [1794556945.929754125] [controller_server]: [FollowPath] dynamic obstacle heartbeat invalid (no valid message within 0.50 s); zero velocity
+[smoke_check.py-5] [INFO] [1794556945.990650211] [smoke_check]: FollowPath goal accepted
+[controller_server-3] [WARN] [1794556946.929889575] [controller_server]: [FollowPath] dynamic obstacle heartbeat invalid (no valid message within 0.50 s); zero velocity
+[smoke_check.py-5] [INFO] [1794556947.196041368] [smoke_check]: PASS zero velocity before first heartbeat
+[mock_obstacle_heartbeat.py-2] [INFO] [1794556947.196838502] [mock_obstacle_heartbeat]: heartbeat enabled=True
+[smoke_check.py-5] [INFO] [1794556947.246595953] [smoke_check]: mock heartbeat enabled=True
+[smoke_check.py-5] [INFO] [1794556947.297070803] [smoke_check]: PASS non-zero command with valid heartbeat
+[smoke_check.py-5] [INFO] [1794556947.297343848] [smoke_check]: PASS diff kinematics: vx=0.000 vy=0.000 wz=-1.500
+[mock_obstacle_heartbeat.py-2] [INFO] [1794556947.298322929] [mock_obstacle_heartbeat]: heartbeat enabled=False
+[smoke_check.py-5] [INFO] [1794556947.347902190] [smoke_check]: mock heartbeat enabled=False
+[controller_server-3] [WARN] [1794556947.979818086] [controller_server]: [FollowPath] dynamic obstacle heartbeat invalid (no valid message within 0.50 s); zero velocity
+[smoke_check.py-5] [INFO] [1794556948.753531059] [smoke_check]: PASS zero velocity after heartbeat timeout
+[mock_obstacle_heartbeat.py-2] [INFO] [1794556948.755027027] [mock_obstacle_heartbeat]: heartbeat enabled=True
+[smoke_check.py-5] [INFO] [1794556948.804577862] [smoke_check]: mock heartbeat enabled=True
+[smoke_check.py-5] [INFO] [1794556948.906163689] [smoke_check]: PASS recovery after heartbeat resumes
+[smoke_check.py-5] RESULT: PASS
+[controller_server-3] [INFO] [1794556948.929714210] [controller_server]: Goal was canceled. Stopping the robot.
+[controller_server-3] [INFO] [1794556948.929758067] [controller_server]: [follow_path] [ActionServer] Client requested to cancel the goal. Cancelling.
+[INFO] [smoke_check.py-5]: process has finished cleanly [pid 57651]
+[INFO] [lifecycle_manager-4]: sending signal 'SIGINT' to process[lifecycle_manager-4]
+[INFO] [controller_server-3]: sending signal 'SIGINT' to process[controller_server-3]
+[INFO] [mock_obstacle_heartbeat.py-2]: sending signal 'SIGINT' to process[mock_obstacle_heartbeat.py-2]
+[INFO] [fake_sensors.py-1]: sending signal 'SIGINT' to process[fake_sensors.py-1]
+[lifecycle_manager-4] [INFO] [1794556949.042937304] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[lifecycle_manager-4] [INFO] [1794556949.043018864] [lifecycle_manager_mpc]: Running Nav2 LifecycleManager rcl preshutdown (lifecycle_manager_mpc)
+[controller_server-3] [INFO] [1794556949.043458495] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[controller_server-3] [INFO] [1794556949.043516422] [controller_server]: Running Nav2 LifecycleNode rcl preshutdown (controller_server)
+[controller_server-3] [INFO] [1794556949.043573275] [controller_server]: Deactivating
+[controller_server-3] [INFO] [1794556949.043595798] [controller_server]: [FollowPath] deactivate
+[controller_server-3] [INFO] [1794556949.043658740] [local_costmap.local_costmap]: Deactivating
+[lifecycle_manager-4] [INFO] [1794556949.043960710] [lifecycle_manager_mpc]: Destroying lifecycle_manager_mpc
+[INFO] [lifecycle_manager-4]: process has finished cleanly [pid 57649]
+[INFO] [mock_obstacle_heartbeat.py-2]: process has finished cleanly [pid 57645]
+[INFO] [fake_sensors.py-1]: process has finished cleanly [pid 57643]
+[controller_server-3] [INFO] [1794556949.188919894] [controller_server]: Destroying bond (controller_server) to lifecycle manager.
+[controller_server-3] [INFO] [1794556949.199527991] [controller_server]: Cleaning up
+[controller_server-3] [INFO] [1794556949.199613417] [controller_server]: [FollowPath] cleanup
+[controller_server-3] [INFO] [1794556949.200102316] [local_costmap.local_costmap]: Cleaning up
+[controller_server-3] [INFO] [1794556949.210549754] [controller_server]: Destroying bond (controller_server) to lifecycle manager.
+[controller_server-3] [INFO] [1794556949.230161428] [local_costmap.local_costmap]: Destroying
+[controller_server-3] [INFO] [1794556949.233956862] [controller_server]: Destroying
+[INFO] [controller_server-3]: process has finished cleanly [pid 57647]

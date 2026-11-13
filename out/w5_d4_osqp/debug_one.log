@@ -1,0 +1,15 @@
+OSQP C version: 0.6.3
+vendored OSQP commit: 0dd00a578cf1c2691c5c379965d504c75bf6cfad
+vendored qdldl commit: 7d16b70a10a152682204d745d814b6eb63dc5cd2
+QP: n=160 m=320 nnz(P)=160 nnz(A)=517 N=40
+settings: eps_abs=1.0e-03 eps_rel=1.0e-03 max_iter=10000 warm_start=1 polish=1 slack_reg=1.0e-04
+runs=1 hard_failures=0 solved_inaccurate=0
+solver-only solve_ms mean=2.389 p95=2.389 max=2.389
+update-only update_ms mean=0.000 p95=0.000 max=0.000
+update+solve_ms mean=2.389 p95=2.389 max=2.389
+iterations mean=600.00 max=600
+last solve: status=1 (solved) pri_res=1.11e-16 dua_res=2.80e-14
+SETUP FAILURE PATH: setup_status=2 (settings_validation), detected=1
+FAILURE PATH: status=-3 (primal_infeasible), iterations=25
+failure paths return status (caller must fall back to zero velocity)
+RESULT: PASS

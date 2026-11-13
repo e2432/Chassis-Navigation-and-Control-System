@@ -1,0 +1,16 @@
+OSQP C version: 0.6.3
+vendored OSQP commit: 0dd00a578cf1c2691c5c379965d504c75bf6cfad
+vendored qdldl commit: 7d16b70a10a152682204d745d814b6eb63dc5cd2
+QP: n=160 m=320 nnz(P)=160 nnz(A)=517 N=40
+settings: eps_abs=1.0e-03 eps_rel=1.0e-03 max_iter=100 warm_start=1 polish=1 slack_reg=1.0e-08
+runs=1 hard_failures=0 solved_inaccurate=1
+solver-only solve_ms mean=0.621 p95=0.621 max=0.621
+update-only update_ms mean=0.000 p95=0.000 max=0.000
+update+solve_ms mean=0.622 p95=0.622 max=0.622
+iterations mean=100.00 max=100
+last solve: status=2 (solved inaccurate) pri_res=1.51e-02 dua_res=6.71e-01
+WARN: OSQP_SOLVED_INACCURATE counted separately; W6 must judge residuals/safety
+SETUP FAILURE PATH: setup_status=2 (settings_validation), detected=1
+FAILURE PATH: status=-3 (primal_infeasible), iterations=25
+failure paths return status (caller must fall back to zero velocity)
+RESULT: PASS_WITH_WARNINGS

@@ -1,0 +1,16 @@
+/home/robot/miniconda3/envs/pro/lib/python3.11/site-packages/osqp/utils.py:118: UserWarning: Converting sparse P to a CSC (compressed sparse column) matrix. (It may take a while...)
+  warn("Converting sparse P to a CSC " +
+PASS P: max abs diff=6.353e-22 (tol=1.0e-08)
+PASS q: max abs diff=2.776e-17 (tol=1.0e-08)
+PASS A: max abs diff=0.000e+00 (tol=1.0e-08)
+PASS l: max abs diff=0.000e+00 (tol=1.0e-08)
+PASS u: max abs diff=0.000e+00 (tol=1.0e-08)
+PASS solution_x(full P): max abs diff=1.894e-04 (tol=1.0e-03)
+PASS control_u: max abs diff=1.894e-04 (tol=1.0e-03)
+PASS slack_s: max abs diff=0.000e+00 (tol=1.0e-03)
+python OSQP full:  status=solved iter=300
+python OSQP upper: status=solved iter=300
+C++ OSQP:          status=solved
+note: P/q/A/l/u are exact; solution tolerance 1e-3 covers the
+      Python osqp 0.6.7.post3 vs C OSQP 0.6.3 solver path difference.
+RESULT: PASS

@@ -58,6 +58,20 @@ launch 包含：`controller_server + lifecycle_manager`、静态 `odom→base_fo
 
 通过时输出 `RESULT: PASS`，launch 自动退出。
 
+## W6 MPC core（QP Builder / SQP / 回退）
+
+`mpc_core` 已移植 W4 Python MPC 的 QP 装配与 SQP 求解（圆障碍 + 墙体、slack、
+零速回退），独立于 Nav2。Python/C++ 数学一致性测试：
+
+```bash
+conda activate pro
+cd prototype/mpc_numpy
+python check_mpc_cpp_qp.py    # 逐项 P/q/A/l/u + 求解结果
+python check_mpc_cpp_sqp.py   # SQP 正常 / max_iter 回退
+```
+
+结果与边界见仓库 `docs/W6_MPC_CORE.md`。插件接入与 Nav2 bringup 仍待后续。
+
 ## D4 OSQP C++ smoke
 
 ```bash

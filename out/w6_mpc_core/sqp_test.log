@@ -1,0 +1,11 @@
+OSQP 失败(maximum iterations reached) → 本拍零速回退，streak=1
+--- normal ---
+python: success=True fallback=False status=solved u=[0.05       0.02427978 0.1       ]
+C++:    success=True fallback=False status=solved streak=0 alarm=False qp_iters=125 max_slack=1.000e-30 u=[0.05       0.02444441 0.1       ]
+control diff: 1.646e-04 (tol=1e-3)
+PASS normal
+--- fallback ---
+python: success=False fallback=True status=maximum iterations reached u=[0. 0. 0.]
+C++:    success=False fallback=True status=maximum iterations reached streak=1 alarm=False qp_iters=1 max_slack=0.000e+00 u=[0. 0. 0.]
+PASS fallback
+RESULT: PASS

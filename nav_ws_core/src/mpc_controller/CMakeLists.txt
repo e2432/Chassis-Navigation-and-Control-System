@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(ament_cmake REQUIRED)
 find_package(builtin_interfaces REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
@@ -73,6 +74,17 @@ set(CTRLC OFF CACHE BOOL "" FORCE)
 set(ENABLE_MKL_PARDISO OFF CACHE BOOL "" FORCE)
 add_subdirectory(third_party/osqp EXCLUDE_FROM_ALL)
 
+# W6 MPC core: QP builder + OSQP solve (Python/C++ consistency test target).
+add_library(mpc_core STATIC src/mpc_core.cpp)
+target_include_directories(mpc_core PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
+target_link_libraries(mpc_core PUBLIC Eigen3::Eigen osqpstatic)
+
+add_executable(mpc_qp_dump src/mpc_qp_dump.cpp)
+target_link_libraries(mpc_qp_dump PRIVATE mpc_core)
+
+add_executable(mpc_sqp_dump src/mpc_sqp_dump.cpp)
+target_link_libraries(mpc_sqp_dump PRIVATE mpc_core)
+
 add_executable(osqp_smoke src/osqp_smoke.cpp)
 target_compile_features(osqp_smoke PRIVATE cxx_std_17)
 target_link_libraries(osqp_smoke PRIVATE osqpstatic m rt dl)
@@ -91,6 +103,8 @@ install(PROGRAMS
   DESTINATION lib/${PROJECT_NAME}
 )
 install(TARGETS osqp_smoke RUNTIME DESTINATION lib/${PROJECT_NAME})
+install(TARGETS mpc_qp_dump RUNTIME DESTINATION lib/${PROJECT_NAME})
+install(TARGETS mpc_sqp_dump RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 ament_export_include_directories(include)
 ament_export_libraries(mpc_controller_core)
