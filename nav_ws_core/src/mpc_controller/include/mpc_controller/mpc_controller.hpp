@@ -43,12 +43,33 @@ public:
   void setSpeedLimit(const double & speed_limit, const bool & percentage) override;
 
 private:
+  bool findLookaheadPoint(
+    const geometry_msgs::msg::Pose & robot_pose,
+    double & look_x, double & look_y) const;
+  double effectiveMaxLinearSpeed() const;
+
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   std::string plugin_name_;
   std::shared_ptr<tf2_ros::Buffer> tf_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav_msgs::msg::Path global_plan_;
-  double speed_limit_{0.0};
+
+  // Chassis parameters (contract schema, plan A: FollowPath subkeys).
+  std::string chassis_type_{"omni"};
+  double robot_radius_{0.30};
+  double v_max_{1.0};
+  double v_min_{-1.0};
+  double vy_max_{1.0};
+  double omega_max_{1.5};
+  double acc_max_{1.0};
+  double alpha_max_{2.0};
+
+  // Minimal passthrough follower parameters (replaced by MPC in W6).
+  double desired_linear_vel_{0.6};
+  double lookahead_dist_{0.5};
+  double rotation_gain_{2.0};
+
+  double speed_limit_{0.0};  // nav2_costmap_2d::NO_SPEED_LIMIT
   bool speed_limit_is_percentage_{false};
   rclcpp::Logger logger_{rclcpp::get_logger("MpcController")};
 };

@@ -7,6 +7,7 @@ endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(ament_cmake REQUIRED)
+find_package(builtin_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
@@ -16,9 +17,18 @@ find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+
+# Interface generation must precede the library target (tutorial §6.4 #10).
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/ObstacleState.msg"
+  "msg/ObstacleStateArray.msg"
+  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs
+)
 
 set(mpc_controller_dependencies
   geometry_msgs
@@ -35,25 +45,30 @@ set(mpc_controller_dependencies
   tf2_ros
 )
 
-add_library(mpc_controller SHARED src/mpc_controller.cpp)
-target_include_directories(mpc_controller PUBLIC
+# rosidl_generate_interfaces already owns the "mpc_controller" CMake target,
+# so the plugin library target is renamed while keeping libmpc_controller.so
+# (plugin XML path must match the output library name).
+add_library(mpc_controller_core SHARED src/mpc_controller.cpp)
+set_target_properties(mpc_controller_core PROPERTIES OUTPUT_NAME mpc_controller)
+target_include_directories(mpc_controller_core PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include>"
 )
-ament_target_dependencies(mpc_controller ${mpc_controller_dependencies})
+ament_target_dependencies(mpc_controller_core ${mpc_controller_dependencies})
 
 # Both registration sites are required by Nav2/pluginlib in Humble.
 pluginlib_export_plugin_description_file(nav2_core mpc_controller_plugin.xml)
 
-install(TARGETS mpc_controller
+install(TARGETS mpc_controller_core
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
 install(DIRECTORY include/ DESTINATION include)
+install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 
 ament_export_include_directories(include)
-ament_export_libraries(mpc_controller)
+ament_export_libraries(mpc_controller_core)
 ament_export_dependencies(${mpc_controller_dependencies})
 
 ament_package()
