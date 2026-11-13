@@ -38,6 +38,8 @@ controller_server:
       rotation_gain: 2.0
       # D3 动态障碍心跳失联阈值（s，ROS 时钟）
       obstacle_timeout: 0.5
+      # 全局路径 -> 局部 costmap 帧的 TF 查询超时（s）
+      transform_tolerance: 0.2
 
 local_costmap:
   local_costmap:

@@ -12,7 +12,9 @@
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "pluginlib/class_list_macros.hpp"
+#include "tf2/exceptions.h"
 #include "tf2/utils.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace mpc_controller
 {
@@ -59,6 +61,8 @@ void MpcController::configure(
     node, prefix + "rotation_gain", rclcpp::ParameterValue(2.0));
   nav2_util::declare_parameter_if_not_declared(
     node, prefix + "obstacle_timeout", rclcpp::ParameterValue(0.5));
+  nav2_util::declare_parameter_if_not_declared(
+    node, prefix + "transform_tolerance", rclcpp::ParameterValue(0.2));
 
   chassis_type_ = node->get_parameter(prefix + "type").as_string();
   robot_radius_ = node->get_parameter(prefix + "footprint.radius").as_double();
@@ -72,6 +76,7 @@ void MpcController::configure(
   lookahead_dist_ = node->get_parameter(prefix + "lookahead_dist").as_double();
   rotation_gain_ = node->get_parameter(prefix + "rotation_gain").as_double();
   obstacle_timeout_ = node->get_parameter(prefix + "obstacle_timeout").as_double();
+  transform_tolerance_ = node->get_parameter(prefix + "transform_tolerance").as_double();
 
   if (chassis_type_ != "omni" && chassis_type_ != "mecanum" && chassis_type_ != "diff") {
     throw std::runtime_error(
@@ -83,7 +88,7 @@ void MpcController::configure(
   }
   if (v_max_ <= 0.0 || vy_max_ < 0.0 || omega_max_ <= 0.0 ||
     desired_linear_vel_ <= 0.0 || lookahead_dist_ <= 0.0 || rotation_gain_ <= 0.0 ||
-    obstacle_timeout_ <= 0.0)
+    obstacle_timeout_ <= 0.0 || transform_tolerance_ <= 0.0)
   {
     throw std::runtime_error("MpcController: non-positive value in chassis/follower parameters");
   }
@@ -102,9 +107,9 @@ void MpcController::configure(
   RCLCPP_INFO(
     logger_,
     "[%s] follower: desired_linear_vel=%.2f lookahead_dist=%.2f rotation_gain=%.2f "
-    "obstacle_timeout=%.2f",
+    "obstacle_timeout=%.2f transform_tolerance=%.2f",
     plugin_name_.c_str(), desired_linear_vel_, lookahead_dist_, rotation_gain_,
-    obstacle_timeout_);
+    obstacle_timeout_, transform_tolerance_);
 }
 
 void MpcController::cleanup()
@@ -134,9 +139,12 @@ void MpcController::deactivate()
 
 void MpcController::setPlan(const nav_msgs::msg::Path & path)
 {
+  // Keep the raw global path and its frame. Transform per control cycle:
+  // map->odom may change when localization corrects the pose.
   global_plan_ = path;
   RCLCPP_DEBUG(
-    logger_, "[%s] setPlan: %zu poses", plugin_name_.c_str(), global_plan_.poses.size());
+    logger_, "[%s] setPlan: %zu poses in frame '%s'", plugin_name_.c_str(),
+    global_plan_.poses.size(), global_plan_.header.frame_id.c_str());
 }
 
 geometry_msgs::msg::TwistStamped MpcController::computeVelocityCommands(
@@ -167,6 +175,21 @@ geometry_msgs::msg::TwistStamped MpcController::computeVelocityCommands(
     return cmd_vel;
   }
 
+  if (!costmap_ros_) {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *node->get_clock(), 2000, "[%s] costmap is not available; zero velocity",
+      plugin_name_.c_str());
+    return cmd_vel;
+  }
+  const std::string costmap_frame = costmap_ros_->getGlobalFrameID();
+  if (!pose.header.frame_id.empty() && pose.header.frame_id != costmap_frame) {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *node->get_clock(), 1000,
+      "[%s] robot pose frame '%s' != costmap frame '%s'; zero velocity",
+      plugin_name_.c_str(), pose.header.frame_id.c_str(), costmap_frame.c_str());
+    return cmd_vel;
+  }
+
   if (global_plan_.poses.empty()) {
     RCLCPP_WARN_THROTTLE(
       logger_, *node->get_clock(), 2000, "[%s] empty global plan; zero velocity",
@@ -174,9 +197,21 @@ geometry_msgs::msg::TwistStamped MpcController::computeVelocityCommands(
     return cmd_vel;
   }
 
+  const rclcpp::Time plan_stamp =
+    (pose.header.stamp.sec == 0 && pose.header.stamp.nanosec == 0) ? now :
+    rclcpp::Time(pose.header.stamp, now.get_clock_type());
+  nav_msgs::msg::Path plan_in_costmap;
+  if (!transformPlanToCostmap(plan_stamp, plan_in_costmap)) {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *node->get_clock(), 1000,
+      "[%s] cannot transform plan '%s' -> '%s'; zero velocity",
+      plugin_name_.c_str(), global_plan_.header.frame_id.c_str(), costmap_frame.c_str());
+    return cmd_vel;
+  }
+
   double look_x = 0.0;
   double look_y = 0.0;
-  if (!findLookaheadPoint(pose.pose, look_x, look_y)) {
+  if (!findLookaheadPoint(plan_in_costmap, pose.pose, look_x, look_y)) {
     return cmd_vel;
   }
 
@@ -257,11 +292,58 @@ bool MpcController::obstacleHeartbeatValid(const rclcpp::Time & now) const
   return (now - last_obstacle_received_) <= rclcpp::Duration::from_seconds(obstacle_timeout_);
 }
 
+bool MpcController::transformPlanToCostmap(
+  const rclcpp::Time & stamp,
+  nav_msgs::msg::Path & transformed_plan) const
+{
+  if (!costmap_ros_ || !tf_) {
+    return false;
+  }
+  const std::string target_frame = costmap_ros_->getGlobalFrameID();
+  const std::string source_frame = global_plan_.header.frame_id;
+  if (source_frame.empty()) {
+    return false;
+  }
+
+  transformed_plan = global_plan_;
+  transformed_plan.header.frame_id = target_frame;
+  transformed_plan.header.stamp = stamp;
+  if (source_frame == target_frame) {
+    return true;
+  }
+
+  geometry_msgs::msg::TransformStamped transform;
+  try {
+    transform = tf_->lookupTransform(
+      target_frame, source_frame, stamp,
+      rclcpp::Duration::from_seconds(transform_tolerance_));
+  } catch (const tf2::TransformException & ex) {
+    auto node = node_.lock();
+    if (node) {
+      RCLCPP_WARN_THROTTLE(
+        logger_, *node->get_clock(), 1000,
+        "[%s] plan transform %s -> %s failed: %s; zero velocity",
+        plugin_name_.c_str(), source_frame.c_str(), target_frame.c_str(), ex.what());
+    }
+    return false;
+  }
+
+  for (auto & pose : transformed_plan.poses) {
+    geometry_msgs::msg::PoseStamped transformed;
+    tf2::doTransform(pose, transformed, transform);
+    transformed.header.frame_id = target_frame;
+    transformed.header.stamp = stamp;
+    pose = transformed;
+  }
+  return true;
+}
+
 bool MpcController::findLookaheadPoint(
+  const nav_msgs::msg::Path & plan,
   const geometry_msgs::msg::Pose & robot_pose,
   double & look_x, double & look_y) const
 {
-  const auto & poses = global_plan_.poses;
+  const auto & poses = plan.poses;
   if (poses.empty()) {
     return false;
   }

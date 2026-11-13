@@ -21,7 +21,23 @@ class SmokeCheck(Node):
     def __init__(self):
         super().__init__("smoke_check")
         self.declare_parameter("chassis_type", "omni")
+        self.declare_parameter("map_frame", "map")
+        self.declare_parameter("map_x", 0.0)
+        self.declare_parameter("map_y", 0.0)
+        self.declare_parameter("map_yaw_deg", 0.0)
+        self.declare_parameter("base_yaw_deg", 0.0)
+        self.declare_parameter("tf_failure_expected", False)
+        self.declare_parameter("map_odom_dynamic_seconds", 0.0)
         self.chassis_type = self.get_parameter("chassis_type").value
+        self.map_frame = self.get_parameter("map_frame").value
+        self.map_x = float(self.get_parameter("map_x").value)
+        self.map_y = float(self.get_parameter("map_y").value)
+        self.map_yaw = math.radians(float(self.get_parameter("map_yaw_deg").value))
+        self.base_yaw = math.radians(float(self.get_parameter("base_yaw_deg").value))
+        self.tf_failure_expected = bool(self.get_parameter("tf_failure_expected").value)
+        self.map_odom_dynamic_seconds = float(
+            self.get_parameter("map_odom_dynamic_seconds").value)
+        self.start_monotonic = time.monotonic()
 
         self.lock = threading.Lock()
         self.last_planar = None
@@ -104,19 +120,55 @@ class SmokeCheck(Node):
             time.sleep(0.02)
         return maximum, seen
 
-    def send_goal(self):
-        if not self.action_client.wait_for_server(timeout_sec=60.0):
-            raise RuntimeError("action server /follow_path not available")
+    def sample_abs(self, duration=1.0):
+        start = time.monotonic()
+        max_planar = 0.0
+        max_wz = 0.0
+        seen = 0
+        _, _, _, _, last_count = self.snapshot()
+        while time.monotonic() - start < duration:
+            planar, _, _, wz, count = self.snapshot()
+            if planar is not None:
+                max_planar = max(max_planar, planar)
+            max_wz = max(max_wz, abs(wz))
+            if count != last_count:
+                seen += count - last_count
+                last_count = count
+            time.sleep(0.02)
+        return max_planar, max_wz, seen
+
+    def build_map_path(self):
+        # TransformStamped map->odom is the pose of odom in map:
+        # p_map = R(map_yaw) * p_odom + (map_x, map_y).
+        # Robot odom pose is (0, 0, base_yaw), so its map pose is
+        # (map_x, map_y, base_yaw + map_yaw).
+        robot_x = self.map_x
+        robot_y = self.map_y
+        if self.chassis_type == "diff":
+            # Keep the path along odom +x so a yaw-offset robot must turn.
+            heading = self.map_yaw
+        else:
+            # Omni: path starts ahead of the robot in its current heading.
+            heading = self.base_yaw + self.map_yaw
 
         path = Path()
-        path.header.frame_id = "odom"
+        path.header.frame_id = self.map_frame
         path.header.stamp = self.get_clock().now().to_msg()
         for index in range(21):
             pose = PoseStamped()
             pose.header = path.header
-            pose.pose.position.x = 0.1 * index
-            pose.pose.orientation.w = 1.0
+            pose.pose.position.x = robot_x + 0.1 * index * math.cos(heading)
+            pose.pose.position.y = robot_y + 0.1 * index * math.sin(heading)
+            pose.pose.orientation.z = math.sin(heading / 2.0)
+            pose.pose.orientation.w = math.cos(heading / 2.0)
             path.poses.append(pose)
+        return path
+
+    def send_goal(self):
+        if not self.action_client.wait_for_server(timeout_sec=60.0):
+            raise RuntimeError("action server /follow_path not available")
+
+        path = self.build_map_path()
 
         goal = FollowPath.Goal()
         goal.path = path
@@ -169,6 +221,43 @@ class SmokeCheck(Node):
             raise RuntimeError("mock heartbeat service not available")
         self.send_goal()
         self.get_logger().info("FollowPath goal accepted")
+
+        if self.tf_failure_expected:
+            # Missing map->odom: Nav2 may abort the goal before the plugin is
+            # called; that is still a safe stop (no /cmd_vel). If the plugin is
+            # called, it must return zero. With a dynamic map->odom, first
+            # confirm normal output, then let the TF expire and require zero.
+            self.set_mock(True)
+            if self.map_odom_dynamic_seconds > 0.0:
+                saw_nonzero = self.wait_nonzero(2.5)
+                deadline = (self.start_monotonic + self.map_odom_dynamic_seconds + 1.5)
+                time.sleep(max(0.0, deadline - time.monotonic()))
+                max_planar, max_wz, _ = self.sample_abs(1.5)
+                if max_planar > 1e-6 or max_wz > 1e-6:
+                    raise RuntimeError(
+                        "TF timeout produced non-zero command "
+                        f"(max planar={max_planar:.3f}, |wz|={max_wz:.3f})")
+                if saw_nonzero:
+                    self.get_logger().info(
+                        "PASS TF timeout -> zero velocity after map->odom expiry")
+                else:
+                    self.get_logger().info(
+                        "PASS TF timeout -> safe abort without /cmd_vel")
+            else:
+                time.sleep(1.5)
+                max_planar, max_wz, seen = self.sample_abs(1.0)
+                if seen == 0:
+                    self.get_logger().info(
+                        "PASS TF failure -> controller_server safe abort (no /cmd_vel)")
+                elif max_planar <= 1e-6 and max_wz <= 1e-6:
+                    self.get_logger().info("PASS TF failure -> zero velocity")
+                else:
+                    raise RuntimeError(
+                        "TF failure produced non-zero command "
+                        f"(max planar={max_planar:.3f}, |wz|={max_wz:.3f})")
+            if self.goal_handle is not None:
+                self.goal_handle.cancel_goal_async()
+            return True
 
         time.sleep(0.6)
         ok, seen = self.zero_window(0.6)

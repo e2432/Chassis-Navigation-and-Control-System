@@ -47,7 +47,11 @@ public:
 private:
   void obstacleCallback(const mpc_controller::msg::ObstacleStateArray::SharedPtr msg);
   bool obstacleHeartbeatValid(const rclcpp::Time & now) const;
+  bool transformPlanToCostmap(
+    const rclcpp::Time & stamp,
+    nav_msgs::msg::Path & transformed_plan) const;
   bool findLookaheadPoint(
+    const nav_msgs::msg::Path & plan,
     const geometry_msgs::msg::Pose & robot_pose,
     double & look_x, double & look_y) const;
   double effectiveMaxLinearSpeed() const;
@@ -72,6 +76,7 @@ private:
   double desired_linear_vel_{0.6};
   double lookahead_dist_{0.5};
   double rotation_gain_{2.0};
+  double transform_tolerance_{0.2};
 
   // Dynamic obstacle heartbeat (W5 D3 semantics; real tracker arrives in W6).
   rclcpp::Subscription<mpc_controller::msg::ObstacleStateArray>::SharedPtr obstacle_sub_;
