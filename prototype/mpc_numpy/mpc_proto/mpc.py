@@ -67,7 +67,17 @@ class MPCConfig:
         `tuned` 字典，实例跑（run_sim/run_w3 的 --instance 模式）统一消费。
         """
         tuned: dict = {
-            # 例：d_safe=0.30, rho_slack=120.0（按 W4 前 5 工作集实测再定）
+            # W4 round 1：指标 5 自查要求逐 run 最小间距中位数 ≥0.30 m；
+            # 默认 d_safe=0.20 会让 run 内最小间隙贴着 0.20（闸口 1 实测 0.199）。
+            "d_safe": 0.30,
+            # 注：static_avoid_05 / mixed_02 的停滞根因是 NavFn 折线穿过物理间隙
+            # <0.3 m（W3 costmap inflation 0.35 只是代价、不是硬约束）；W4 实例
+            # 改用 nav2_w4_params.yaml（inflation 0.60 / scaling 5.0）取可行折线。
+            # 8 障碍（mixed）时 OSQP 在 1e-4/4000 下出现 maximum iterations；
+            # 按手册「求解失败先看回退，再考虑放宽」放宽到 1e-3/10000（仅基准预设）。
+            "eps_abs": 1e-3,
+            "eps_rel": 1e-3,
+            "max_iter": 10000,
         }
         tuned.update(overrides)
         cfg = cls(**tuned)
@@ -92,6 +102,9 @@ class MPCConfig:
             "rho_slack": self.rho_slack,
             "d_safe": self.d_safe,
             "n_sqp": self.n_sqp,
+            "eps_abs": self.eps_abs,
+            "eps_rel": self.eps_rel,
+            "max_iter": self.max_iter,
         }
 
 
