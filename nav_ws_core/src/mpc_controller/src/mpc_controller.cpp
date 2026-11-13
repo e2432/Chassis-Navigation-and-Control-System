@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -56,6 +57,8 @@ void MpcController::configure(
     node, prefix + "lookahead_dist", rclcpp::ParameterValue(0.5));
   nav2_util::declare_parameter_if_not_declared(
     node, prefix + "rotation_gain", rclcpp::ParameterValue(2.0));
+  nav2_util::declare_parameter_if_not_declared(
+    node, prefix + "obstacle_timeout", rclcpp::ParameterValue(0.5));
 
   chassis_type_ = node->get_parameter(prefix + "type").as_string();
   robot_radius_ = node->get_parameter(prefix + "footprint.radius").as_double();
@@ -68,6 +71,7 @@ void MpcController::configure(
   desired_linear_vel_ = node->get_parameter(prefix + "desired_linear_vel").as_double();
   lookahead_dist_ = node->get_parameter(prefix + "lookahead_dist").as_double();
   rotation_gain_ = node->get_parameter(prefix + "rotation_gain").as_double();
+  obstacle_timeout_ = node->get_parameter(prefix + "obstacle_timeout").as_double();
 
   if (chassis_type_ != "omni" && chassis_type_ != "mecanum" && chassis_type_ != "diff") {
     throw std::runtime_error(
@@ -78,10 +82,17 @@ void MpcController::configure(
     vy_max_ = 0.0;
   }
   if (v_max_ <= 0.0 || vy_max_ < 0.0 || omega_max_ <= 0.0 ||
-    desired_linear_vel_ <= 0.0 || lookahead_dist_ <= 0.0 || rotation_gain_ <= 0.0)
+    desired_linear_vel_ <= 0.0 || lookahead_dist_ <= 0.0 || rotation_gain_ <= 0.0 ||
+    obstacle_timeout_ <= 0.0)
   {
     throw std::runtime_error("MpcController: non-positive value in chassis/follower parameters");
   }
+
+  obstacle_sub_ = node->create_subscription<mpc_controller::msg::ObstacleStateArray>(
+    "/mpc/obstacles", rclcpp::QoS(10),
+    std::bind(&MpcController::obstacleCallback, this, std::placeholders::_1));
+  has_valid_obstacle_msg_ = false;
+  last_obstacle_received_ = node->now();
 
   RCLCPP_INFO(
     logger_,
@@ -90,24 +101,35 @@ void MpcController::configure(
     omega_max_);
   RCLCPP_INFO(
     logger_,
-    "[%s] follower: desired_linear_vel=%.2f lookahead_dist=%.2f rotation_gain=%.2f",
-    plugin_name_.c_str(), desired_linear_vel_, lookahead_dist_, rotation_gain_);
+    "[%s] follower: desired_linear_vel=%.2f lookahead_dist=%.2f rotation_gain=%.2f "
+    "obstacle_timeout=%.2f",
+    plugin_name_.c_str(), desired_linear_vel_, lookahead_dist_, rotation_gain_,
+    obstacle_timeout_);
 }
 
 void MpcController::cleanup()
 {
   RCLCPP_INFO(logger_, "[%s] cleanup", plugin_name_.c_str());
+  {
+    std::lock_guard<std::mutex> lock(obstacle_mutex_);
+    has_valid_obstacle_msg_ = false;
+  }
+  obstacle_sub_.reset();
   global_plan_ = nav_msgs::msg::Path();
 }
 
 void MpcController::activate()
 {
   RCLCPP_INFO(logger_, "[%s] activate", plugin_name_.c_str());
+  std::lock_guard<std::mutex> lock(obstacle_mutex_);
+  has_valid_obstacle_msg_ = false;
 }
 
 void MpcController::deactivate()
 {
   RCLCPP_INFO(logger_, "[%s] deactivate", plugin_name_.c_str());
+  std::lock_guard<std::mutex> lock(obstacle_mutex_);
+  has_valid_obstacle_msg_ = false;
 }
 
 void MpcController::setPlan(const nav_msgs::msg::Path & path)
@@ -134,7 +156,16 @@ geometry_msgs::msg::TwistStamped MpcController::computeVelocityCommands(
   if (!node) {
     return cmd_vel;
   }
-  cmd_vel.header.stamp = node->now();
+  const rclcpp::Time now = node->now();
+  cmd_vel.header.stamp = now;
+
+  if (!obstacleHeartbeatValid(now)) {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *node->get_clock(), 1000,
+      "[%s] dynamic obstacle heartbeat invalid (no valid message within %.2f s); "
+      "zero velocity", plugin_name_.c_str(), obstacle_timeout_);
+    return cmd_vel;
+  }
 
   if (global_plan_.poses.empty()) {
     RCLCPP_WARN_THROTTLE(
@@ -183,6 +214,47 @@ void MpcController::setSpeedLimit(const double & speed_limit, const bool & perce
   RCLCPP_INFO(
     logger_, "[%s] setSpeedLimit: %.3f (%s)", plugin_name_.c_str(), speed_limit_,
     speed_limit_is_percentage_ ? "percentage" : "absolute");
+}
+
+void MpcController::obstacleCallback(
+  const mpc_controller::msg::ObstacleStateArray::SharedPtr msg)
+{
+  auto node = node_.lock();
+  if (!node) {
+    return;
+  }
+  if (msg->header.frame_id != "odom") {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *node->get_clock(), 2000,
+      "[%s] obstacle message frame_id='%s' (expected 'odom'); ignored",
+      plugin_name_.c_str(), msg->header.frame_id.c_str());
+    return;
+  }
+
+  const rclcpp::Time now = node->now();
+  const rclcpp::Time stamp(msg->header.stamp, now.get_clock_type());
+  if (stamp.nanoseconds() == 0 ||
+    (now - stamp) > rclcpp::Duration::from_seconds(obstacle_timeout_))
+  {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *node->get_clock(), 2000,
+      "[%s] stale obstacle message (age > %.2f s); ignored",
+      plugin_name_.c_str(), obstacle_timeout_);
+    return;
+  }
+
+  std::lock_guard<std::mutex> lock(obstacle_mutex_);
+  has_valid_obstacle_msg_ = true;
+  last_obstacle_received_ = now;
+}
+
+bool MpcController::obstacleHeartbeatValid(const rclcpp::Time & now) const
+{
+  std::lock_guard<std::mutex> lock(obstacle_mutex_);
+  if (!has_valid_obstacle_msg_) {
+    return false;
+  }
+  return (now - last_obstacle_received_) <= rclcpp::Duration::from_seconds(obstacle_timeout_);
 }
 
 bool MpcController::findLookaheadPoint(

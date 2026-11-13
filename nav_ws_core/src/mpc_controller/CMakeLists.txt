@@ -56,6 +56,11 @@ target_include_directories(mpc_controller_core PUBLIC
 )
 ament_target_dependencies(mpc_controller_core ${mpc_controller_dependencies})
 
+# The plugin consumes the same-package messages (D3 heartbeat subscription).
+rosidl_get_typesupport_target(
+  mpc_controller_typesupport_cpp ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(mpc_controller_core "${mpc_controller_typesupport_cpp}")
+
 # Both registration sites are required by Nav2/pluginlib in Humble.
 pluginlib_export_plugin_description_file(nav2_core mpc_controller_plugin.xml)
 
@@ -65,7 +70,13 @@ install(TARGETS mpc_controller_core
   RUNTIME DESTINATION bin
 )
 install(DIRECTORY include/ DESTINATION include)
-install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY config launch DESTINATION share/${PROJECT_NAME})
+install(PROGRAMS
+  scripts/fake_sensors.py
+  scripts/mock_obstacle_heartbeat.py
+  scripts/smoke_check.py
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 ament_export_include_directories(include)
 ament_export_libraries(mpc_controller_core)

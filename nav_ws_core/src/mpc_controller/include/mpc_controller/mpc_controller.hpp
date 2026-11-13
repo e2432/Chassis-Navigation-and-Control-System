@@ -2,11 +2,13 @@
 #define MPC_CONTROLLER__MPC_CONTROLLER_HPP_
 
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
+#include "mpc_controller/msg/obstacle_state_array.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_core/controller.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -43,6 +45,8 @@ public:
   void setSpeedLimit(const double & speed_limit, const bool & percentage) override;
 
 private:
+  void obstacleCallback(const mpc_controller::msg::ObstacleStateArray::SharedPtr msg);
+  bool obstacleHeartbeatValid(const rclcpp::Time & now) const;
   bool findLookaheadPoint(
     const geometry_msgs::msg::Pose & robot_pose,
     double & look_x, double & look_y) const;
@@ -68,6 +72,13 @@ private:
   double desired_linear_vel_{0.6};
   double lookahead_dist_{0.5};
   double rotation_gain_{2.0};
+
+  // Dynamic obstacle heartbeat (W5 D3 semantics; real tracker arrives in W6).
+  rclcpp::Subscription<mpc_controller::msg::ObstacleStateArray>::SharedPtr obstacle_sub_;
+  mutable std::mutex obstacle_mutex_;
+  bool has_valid_obstacle_msg_{false};
+  rclcpp::Time last_obstacle_received_{0, 0, RCL_SYSTEM_TIME};
+  double obstacle_timeout_{0.5};
 
   double speed_limit_{0.0};  // nav2_costmap_2d::NO_SPEED_LIMIT
   bool speed_limit_is_percentage_{false};
