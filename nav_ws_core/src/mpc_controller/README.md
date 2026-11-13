@@ -39,6 +39,20 @@ launch 包含：`controller_server + lifecycle_manager`、静态 `odom→base_fo
 
 通过时输出 `RESULT: PASS`，launch 自动退出。
 
+## D4 OSQP C++ smoke
+
+```bash
+# 1000 次、N=40、160 变量稀疏 QP（逐轮更新线性代价 q）
+ros2 run mpc_controller osqp_smoke
+
+# 触发/检查 SOLVED_INACCURATE 的探针（max_iter=100）
+ros2 run mpc_controller osqp_smoke --runs 1 --max-iter 100
+```
+
+vendored OSQP 0.6.3（commit `0dd00a5`，qdldl `7d16b70`），详见
+`third_party/VENDORED.md`。D4 实测结果与边界见 `docs/W5_D4_OSQP_SMOKE.md`
+（位于仓库 `docs/`）。p95 只是 OSQP 求解时间，不代表 W6 整控制周期满足 20 Hz。
+
 ## 边界
 
 - D3 不证明导航成功、不要求避障；不启动 planner/BT navigator。

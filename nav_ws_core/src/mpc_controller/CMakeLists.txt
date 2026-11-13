@@ -64,6 +64,19 @@ target_link_libraries(mpc_controller_core "${mpc_controller_typesupport_cpp}")
 # Both registration sites are required by Nav2/pluginlib in Humble.
 pluginlib_export_plugin_description_file(nav2_core mpc_controller_plugin.xml)
 
+# W5 D4: vendored OSQP 0.6.3 (pin details in third_party/VENDORED.md).
+# EXCLUDE_FROM_ALL keeps OSQP's own install rules out of this package.
+set(UNITTESTS OFF CACHE BOOL "" FORCE)
+set(PRINTING OFF CACHE BOOL "" FORCE)
+set(PROFILING ON CACHE BOOL "" FORCE)
+set(CTRLC OFF CACHE BOOL "" FORCE)
+set(ENABLE_MKL_PARDISO OFF CACHE BOOL "" FORCE)
+add_subdirectory(third_party/osqp EXCLUDE_FROM_ALL)
+
+add_executable(osqp_smoke src/osqp_smoke.cpp)
+target_compile_features(osqp_smoke PRIVATE cxx_std_17)
+target_link_libraries(osqp_smoke PRIVATE osqpstatic m rt dl)
+
 install(TARGETS mpc_controller_core
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -77,6 +90,7 @@ install(PROGRAMS
   scripts/smoke_check.py
   DESTINATION lib/${PROJECT_NAME}
 )
+install(TARGETS osqp_smoke RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 ament_export_include_directories(include)
 ament_export_libraries(mpc_controller_core)
