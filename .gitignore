@@ -2,3 +2,8 @@
 .vscode/
 __pycache__/
 *.pyc
+
+# colcon build artifacts
+nav_ws_core/build/
+nav_ws_core/install/
+nav_ws_core/log/
