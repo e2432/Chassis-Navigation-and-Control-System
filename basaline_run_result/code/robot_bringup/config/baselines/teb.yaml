@@ -1,0 +1,97 @@
+# 基线 TEB 参数 —— 9-1 §5.3（**2026-11-14：官方源码已在本机构建通过，解除阻塞**）
+#
+# 来源（官方，无 fork）：
+#   rst-tu-dortmund/teb_local_planner  branch `humble-devel`（v0.9.1）
+#   rst-tu-dortmund/costmap_converter  branch `ros2`
+#   插件类型实测为 `teb_local_planner::TebLocalPlannerROS`（见 *_plugin.xml）
+#
+# 构建方式（两个不得已的绕行，均已记录在 docs/9-1工程执行台账.md §I）：
+#   1) 工作区中文路径 → 一律构建到 ASCII 工作区 `~/teb_build_ws`；
+#   2) `libg2o` 只在 apt 里且 sudo 需要密码 → 用 `apt-get download` + `dpkg -x`
+#      解包到 `~/teb_prebuilt`（无需 root）。
+#
+# 启动前必须：
+#   export LD_LIBRARY_PATH=$HOME/teb_prebuilt/opt/ros/humble/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
+#   source ~/teb_build_ws/install/setup.bash
+#
+# 处理原则（引自 9-1 §3）：不因接入困难单方面把主实验改成 diff，也不得静默删除 TEB。
+controller_server:
+  ros__parameters:
+    use_sim_time: true
+    controller_frequency: 20.0
+    # 全向底盘：横移速度必须进里程计（0.5 会把横移全当 0，见台账 §G.2 #5）
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.001
+    min_theta_velocity_threshold: 0.001
+    failure_tolerance: 0.5
+    # 下面这段**不能省**：采集器发 follow_path 时带 goal_checker_id="general_goal_checker"，
+    # 如果 YAML 里没注册这个名字，controller_server 会打
+    #   "FollowPath called with goal_checker name general_goal_checker ... does not exist"
+    # 然后**立刻 abort**（1 ms 内、没有任何异常栈，非常难查；2026-11-14 用 debug 日志抓到）。
+    progress_checker_plugins: ["progress_checker"]
+    goal_checker_plugins: ["general_goal_checker"]
+    controller_plugins: ["FollowPath"]
+
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.5
+      movement_time_allowance: 10.0
+    general_goal_checker:
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.25          # 契约到达判定（0.25 m）
+      yaw_goal_tolerance: 0.25         # 契约到达判定（0.25 rad）
+      stateful: true
+    FollowPath:
+      # 插件名需按选定 fork 的实际类型替换（TebLocalPlannerROS / TebController）
+      plugin: "teb_local_planner::TebLocalPlannerROS"
+      # ---- 速度/加速度（§5.3）----
+      max_vel_x: 0.6
+      max_vel_y: 0.6                   # 需 fork 实际支持横向
+      max_vel_x_backwards: 0.6
+      max_vel_theta: 1.5
+      acc_lim_x: 1.0
+      acc_lim_y: 1.0
+      acc_lim_theta: 2.0
+      min_turning_radius: 0.0
+      # 足迹模型：不写就退化成"点状机器人"（实测日志会打印 point-shaped model），
+      # 底盘 643×656 mm 的八边形必须显式给，否则避障间距全按点算。
+      footprint_model:
+        type: "polygon"
+        # 注意：TEB 的 `footprint_model.vertices` 声明成 PARAMETER_STRING，用
+        # nav2_costmap_2d::makeFootprintFromString 解析，所以必须是**字符串**；
+        # 而且 rcl 的参数文件解析器本身也不接受嵌套数组
+        # （写成 [[..],[..]] 会报 "Sequences cannot be key"，controller_server 直接 abort）。
+        vertices: "[[0.3215, 0.113], [0.113, 0.328], [-0.113, 0.328], [-0.3215, 0.113], [-0.3215, -0.113], [-0.113, -0.328], [0.113, -0.328], [0.3215, -0.113]]"
+      # ---- 权重 ----
+      # 全向：官方源码里 max_vel_y != 0 会走 holonomic 优化分支（optimal_planner.cpp:747/827），
+      # 此时必须给 weight_max_vel_y / weight_acc_lim_y，并把非完整约束权重置 0。
+      weight_max_vel_x: 2.0
+      weight_max_vel_y: 1.0
+      weight_acc_lim_y: 1.0
+      weight_max_vel_theta: 1.0
+      weight_acc_lim_x: 1.0
+      weight_acc_lim_theta: 1.0
+      weight_kinematics_nh: 0.0        # omni 按 fork 降低/置 0；diff 迁移 1000
+      weight_kinematics_forward_drive: 0.0
+      weight_optimaltime: 1.0
+      # Round 0（2026-11-15）：显式给障碍距离约束。原先没写，用官方默认值，
+      # dead_end 里 TEB 一直在后墙角切过去（间距恒 -0.0，4/4 失败）。
+      min_obstacle_dist: 0.30          # 期望的最小障碍间距（m）
+      inflation_dist: 0.45             # 必须 > min_obstacle_dist 才起作用
+      weight_obstacle: 100.0
+      weight_dynamic_obstacle: 10.0    # 仅当 fork 真正消费动态障碍时有效
+      weight_viapoint: 1.0
+      weight_adapt_factor: 2.0
+      # ---- 离散/预算 ----
+      dt_ref: 0.3
+      dt_hysteresis: 0.1
+      max_samples: 500
+      min_samples: 3
+      no_inner_iterations: 5
+      no_outer_iterations: 4
+      max_global_plan_lookahead_dist: 3.0
+      feasibility_check_no_poses: 5
+      obstacle_poses_affected: 30
+      selection_dist_holonomic: 0.8   # 仅 holonomic fork
+      # 就绪状态：官方源码构建通过（2026-11-14）。六项可用性验收见台账 §I，
+      # 未通过全部六项之前不进 Round 0。

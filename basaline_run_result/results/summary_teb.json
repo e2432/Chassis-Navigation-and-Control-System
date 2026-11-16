@@ -1,0 +1,357 @@
+{
+  "per_scenario": {
+    "static_avoid": {
+      "runs": 20,
+      "success_rate": 0.8,
+      "time_to_goal_s_median": 18.2583,
+      "path_length_m_median": 10.6248,
+      "smoothness_median": 16.108,
+      "min_clearance_m_median": 0.3097,
+      "min_clearance_m_worst": 0.2769,
+      "estop_count_total": 0,
+      "controllers": [
+        "teb"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "dynamic_pedestrian": {
+      "runs": 20,
+      "success_rate": 0.4,
+      "time_to_goal_s_median": 16.6416,
+      "path_length_m_median": 10.0201,
+      "smoothness_median": 13.1575,
+      "min_clearance_m_median": -0.1985,
+      "min_clearance_m_worst": -0.2997,
+      "estop_count_total": 0,
+      "controllers": [
+        "teb"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "narrow_passage": {
+      "runs": 20,
+      "success_rate": 0.85,
+      "time_to_goal_s_median": 20.6667,
+      "path_length_m_median": 12.1642,
+      "smoothness_median": 13.9406,
+      "min_clearance_m_median": 0.3417,
+      "min_clearance_m_worst": 0.2654,
+      "estop_count_total": 3,
+      "controllers": [
+        "teb"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "dead_end": {
+      "runs": 20,
+      "success_rate": 0.9,
+      "time_to_goal_s_median": 20.8584,
+      "path_length_m_median": 12.2802,
+      "smoothness_median": 14.8031,
+      "min_clearance_m_median": 0.3039,
+      "min_clearance_m_worst": 0.2231,
+      "estop_count_total": 0,
+      "controllers": [
+        "teb"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "mixed": {
+      "runs": 20,
+      "success_rate": 0.55,
+      "time_to_goal_s_median": 21.2667,
+      "path_length_m_median": 12.6125,
+      "smoothness_median": 17.582,
+      "min_clearance_m_median": 0.0389,
+      "min_clearance_m_worst": -0.2993,
+      "estop_count_total": 0,
+      "controllers": [
+        "teb"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    }
+  },
+  "dynamic_stress": 0.475,
+  "anomalies": [
+    {
+      "scenario": "static_avoid",
+      "seed": 107,
+      "run": 7,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 0.3174,
+      "t_end_s": 24.1333
+    },
+    {
+      "scenario": "static_avoid",
+      "seed": 108,
+      "run": 8,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 0.355,
+      "t_end_s": 16.6167
+    },
+    {
+      "scenario": "static_avoid",
+      "seed": 118,
+      "run": 18,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 0.302,
+      "t_end_s": 20.2833
+    },
+    {
+      "scenario": "static_avoid",
+      "seed": 119,
+      "run": 19,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 0.3037,
+      "t_end_s": 28.1833
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 201,
+      "run": 1,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.043,
+      "t_end_s": 16.65
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 203,
+      "run": 3,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.2981,
+      "t_end_s": 16.6167
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 206,
+      "run": 6,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.2983,
+      "t_end_s": 16.4833
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 207,
+      "run": 7,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.2238,
+      "t_end_s": 17.55
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 209,
+      "run": 9,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.2997,
+      "t_end_s": 17.4166
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 212,
+      "run": 12,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.2034,
+      "t_end_s": 17.1166
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 214,
+      "run": 14,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.2996,
+      "t_end_s": 17.3667
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 215,
+      "run": 15,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.2967,
+      "t_end_s": 16.5333
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 216,
+      "run": 16,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.2988,
+      "t_end_s": 17.8334
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 218,
+      "run": 18,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.297,
+      "t_end_s": 16.9333
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 219,
+      "run": 19,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.2978,
+      "t_end_s": 17.45
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 220,
+      "run": 20,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.1935,
+      "t_end_s": 17.7
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 306,
+      "run": 6,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 3.0718,
+      "t_end_s": 10.7333
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 311,
+      "run": 11,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 4.5119,
+      "t_end_s": 10.7833
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 314,
+      "run": 14,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 1.9312,
+      "t_end_s": 10.7833
+    },
+    {
+      "scenario": "dead_end",
+      "seed": 409,
+      "run": 9,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 0.2977,
+      "t_end_s": 30.3167
+    },
+    {
+      "scenario": "dead_end",
+      "seed": 416,
+      "run": 16,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 0.3338,
+      "t_end_s": 17.1333
+    },
+    {
+      "scenario": "mixed",
+      "seed": 501,
+      "run": 1,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.295,
+      "t_end_s": 21.5333
+    },
+    {
+      "scenario": "mixed",
+      "seed": 502,
+      "run": 2,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.298,
+      "t_end_s": 23.8667
+    },
+    {
+      "scenario": "mixed",
+      "seed": 506,
+      "run": 6,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.2986,
+      "t_end_s": 21.3333
+    },
+    {
+      "scenario": "mixed",
+      "seed": 508,
+      "run": 8,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.0654,
+      "t_end_s": 21.1667
+    },
+    {
+      "scenario": "mixed",
+      "seed": 512,
+      "run": 12,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.2969,
+      "t_end_s": 21.2333
+    },
+    {
+      "scenario": "mixed",
+      "seed": 513,
+      "run": 13,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.2993,
+      "t_end_s": 19.8167
+    },
+    {
+      "scenario": "mixed",
+      "seed": 515,
+      "run": 15,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.1482,
+      "t_end_s": 20.05
+    },
+    {
+      "scenario": "mixed",
+      "seed": 516,
+      "run": 16,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.2989,
+      "t_end_s": 22.45
+    },
+    {
+      "scenario": "mixed",
+      "seed": 518,
+      "run": 18,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.2563,
+      "t_end_s": 22.9333
+    }
+  ]
+}
