@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "mpc_controller/distance_field.hpp"
+
 namespace mpc_controller
 {
 
@@ -108,7 +110,10 @@ public:
     const Eigen::MatrixXd & ubar,
     const Eigen::MatrixXd & z_ref,
     const std::vector<Obstacle> & obstacles,
-    const Eigen::Vector3d & u_prev) const;
+    const Eigen::Vector3d & u_prev,
+    const GridDistanceField * static_field = nullptr,
+    const Eigen::Matrix2d & map_to_odom_rotation = Eigen::Matrix2d::Identity(),
+    const Eigen::Vector2d & map_to_odom_translation = Eigen::Vector2d::Zero()) const;
 
   QpSolution solveQp(const QpProblem & qp) const;
 
@@ -116,7 +121,10 @@ public:
     const Eigen::Vector3d & z0,
     const Eigen::MatrixXd & z_ref,
     const Eigen::MatrixXd & u_ref,
-    const std::vector<Obstacle> & obstacles);
+    const std::vector<Obstacle> & obstacles,
+    const GridDistanceField * static_field = nullptr,
+    const Eigen::Matrix2d & map_to_odom_rotation = Eigen::Matrix2d::Identity(),
+    const Eigen::Vector2d & map_to_odom_translation = Eigen::Vector2d::Zero());
 
   const MpcConfig & config() const {return cfg_;}
   const ChassisParams & chassis() const {return chassis_;}

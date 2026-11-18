@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.8)
 project(mpc_controller)
 
+# The MPC core is numerically heavy; an unset build type (-O0) exceeds the
+# 20 Hz control budget. Default to Release when the caller did not choose one.
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
@@ -28,6 +34,7 @@ find_package(tf2_ros REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ObstacleState.msg"
   "msg/ObstacleStateArray.msg"
+  "msg/MpcDiagnostics.msg"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs
 )
 
@@ -67,6 +74,7 @@ pluginlib_export_plugin_description_file(nav2_core mpc_controller_plugin.xml)
 
 # W5 D4: vendored OSQP 0.6.3 (pin details in third_party/VENDORED.md).
 # EXCLUDE_FROM_ALL keeps OSQP's own install rules out of this package.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(UNITTESTS OFF CACHE BOOL "" FORCE)
 set(PRINTING OFF CACHE BOOL "" FORCE)
 set(PROFILING ON CACHE BOOL "" FORCE)
@@ -74,16 +82,27 @@ set(CTRLC OFF CACHE BOOL "" FORCE)
 set(ENABLE_MKL_PARDISO OFF CACHE BOOL "" FORCE)
 add_subdirectory(third_party/osqp EXCLUDE_FROM_ALL)
 
-# W6 MPC core: QP builder + OSQP solve (Python/C++ consistency test target).
-add_library(mpc_core STATIC src/mpc_core.cpp)
+# W6 MPC core: QP builder + OSQP solve + reference generator
+# (Python/C++ consistency test targets).
+add_library(mpc_core STATIC src/mpc_core.cpp src/reference.cpp src/distance_field.cpp)
+set_target_properties(mpc_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(mpc_core PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
 target_link_libraries(mpc_core PUBLIC Eigen3::Eigen osqpstatic)
+
+# The Nav2 plugin consumes MpcCore + ReferencePath (shared lib needs PIC).
+target_link_libraries(mpc_controller_core mpc_core)
 
 add_executable(mpc_qp_dump src/mpc_qp_dump.cpp)
 target_link_libraries(mpc_qp_dump PRIVATE mpc_core)
 
 add_executable(mpc_sqp_dump src/mpc_sqp_dump.cpp)
 target_link_libraries(mpc_sqp_dump PRIVATE mpc_core)
+
+add_executable(mpc_ref_dump src/mpc_ref_dump.cpp)
+target_link_libraries(mpc_ref_dump PRIVATE mpc_core)
+
+add_executable(distance_field_selftest src/distance_field_selftest.cpp)
+target_link_libraries(distance_field_selftest PRIVATE mpc_core)
 
 add_executable(osqp_smoke src/osqp_smoke.cpp)
 target_compile_features(osqp_smoke PRIVATE cxx_std_17)
@@ -98,13 +117,18 @@ install(DIRECTORY include/ DESTINATION include)
 install(DIRECTORY config launch DESTINATION share/${PROJECT_NAME})
 install(PROGRAMS
   scripts/fake_sensors.py
+  scripts/fake_static_map.py
   scripts/mock_obstacle_heartbeat.py
+  scripts/record_mpc_diagnostics.py
+  scripts/scenario_obstacle_publisher.py
   scripts/smoke_check.py
   DESTINATION lib/${PROJECT_NAME}
 )
 install(TARGETS osqp_smoke RUNTIME DESTINATION lib/${PROJECT_NAME})
 install(TARGETS mpc_qp_dump RUNTIME DESTINATION lib/${PROJECT_NAME})
 install(TARGETS mpc_sqp_dump RUNTIME DESTINATION lib/${PROJECT_NAME})
+install(TARGETS mpc_ref_dump RUNTIME DESTINATION lib/${PROJECT_NAME})
+install(TARGETS distance_field_selftest RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 ament_export_include_directories(include)
 ament_export_libraries(mpc_controller_core)
