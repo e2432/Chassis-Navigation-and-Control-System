@@ -173,6 +173,9 @@ class MPCSolver:
         obstacles: list[Obstacle | Wall],
         reference: ReferencePath,
         t_now: float = 0.0,
+        static_field=None,
+        map_to_odom_rotation: np.ndarray | None = None,
+        map_to_odom_translation: np.ndarray | None = None,
     ) -> SolveResult:
         cfg, ch = self.cfg, self.chassis
         N, dt = cfg.N, cfg.dt
@@ -186,7 +189,11 @@ class MPCSolver:
         result = None
         last_ok = None
         for _ in range(max(1, cfg.n_sqp)):
-            result = self._solve_qp(z0, zbar, ubar, z_ref, obstacles)
+            result = self._solve_qp(
+                z0, zbar, ubar, z_ref, obstacles,
+                static_field=static_field,
+                map_to_odom_rotation=map_to_odom_rotation,
+                map_to_odom_translation=map_to_odom_translation)
             if not result.success:
                 break
             last_ok = result
@@ -227,12 +234,16 @@ class MPCSolver:
         ubar: np.ndarray,
         z_ref: np.ndarray,
         obstacles: list[Obstacle | Wall],
+        static_field=None,
+        map_to_odom_rotation: np.ndarray | None = None,
+        map_to_odom_translation: np.ndarray | None = None,
     ) -> SolveResult:
         cfg, ch = self.cfg, self.chassis
         N, dt = cfg.N, cfg.dt
         n_obs = len(obstacles)
+        has_field = static_field is not None and not static_field.empty()
         n_u = 3 * N
-        n_s = N * n_obs if cfg.slack else 0  # slack 消融关闭时无 slack 变量 → 硬约束
+        n_s = N * (n_obs + (1 if has_field else 0)) if cfg.slack else 0
         nx = n_u + n_s
 
         # 1) LTV 递推 → z_k = Xi_k U + xi_k（k=0..N）
@@ -317,6 +328,11 @@ class MPCSolver:
                 ub.append(hi)
 
         # 障碍软约束：∇dᵀ p_k + s ≥ d_safe − d̂ + ∇dᵀ p̂（k=1..N）
+        if has_field:
+            rotation = np.eye(2) if map_to_odom_rotation is None else np.asarray(
+                map_to_odom_rotation, dtype=float)
+            translation = np.zeros(2) if map_to_odom_translation is None else np.asarray(
+                map_to_odom_translation, dtype=float)
         for k in range(1, N + 1):
             p_hat = zbar[k, :2]
             tau = k * dt
@@ -331,6 +347,27 @@ class MPCSolver:
                 rows.append(row)
                 lb.append(rhs)
                 ub.append(np.inf)
+
+            # 静态距离场软约束（与 C++ MpcCore 同构）
+            if has_field:
+                row = np.zeros(nx)
+                p_map = rotation.T @ (p_hat - translation)
+                sample = static_field.sample(p_map)
+                if sample is not None:
+                    distance, grad_field = sample
+                    g = rotation @ grad_field
+                    rhs = cfg.d_safe - (distance - ch.radius) + float(
+                        g @ (p_hat - xi[k, :2]))
+                    row[:n_u] = g @ Xi[k, :2, :]
+                    if n_s:
+                        row[n_u + N * n_obs + (k - 1)] = 1.0
+                    rows.append(row)
+                    lb.append(rhs)
+                    ub.append(np.inf)
+                else:
+                    rows.append(row)
+                    lb.append(-np.inf)
+                    ub.append(np.inf)
 
         # slack ≥ 0
         for idx_s in range(n_s):
