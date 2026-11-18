@@ -1,0 +1,240 @@
+{
+  "per_scenario": {
+    "static_avoid": {
+      "runs": 20,
+      "success_rate": 0.9,
+      "time_to_goal_s_median": 19.375,
+      "path_length_m_median": 10.2709,
+      "smoothness_median": 19.0858,
+      "min_clearance_m_median": 0.167,
+      "min_clearance_m_worst": 0.0693,
+      "estop_count_total": 0,
+      "controllers": [
+        "dwa"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "dynamic_pedestrian": {
+      "runs": 20,
+      "success_rate": 0.75,
+      "time_to_goal_s_median": 28.1,
+      "path_length_m_median": 9.75,
+      "smoothness_median": 18.1651,
+      "min_clearance_m_median": 0.8034,
+      "min_clearance_m_worst": 0.6975,
+      "estop_count_total": 0,
+      "controllers": [
+        "dwa"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "narrow_passage": {
+      "runs": 20,
+      "success_rate": 0.75,
+      "time_to_goal_s_median": 21.65,
+      "path_length_m_median": 11.6911,
+      "smoothness_median": 16.0449,
+      "min_clearance_m_median": 0.2066,
+      "min_clearance_m_worst": 0.0397,
+      "estop_count_total": 5,
+      "controllers": [
+        "dwa"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "dead_end": {
+      "runs": 20,
+      "success_rate": 0.85,
+      "time_to_goal_s_median": 22.5333,
+      "path_length_m_median": 12.117,
+      "smoothness_median": 22.7097,
+      "min_clearance_m_median": 0.1144,
+      "min_clearance_m_worst": 0.0453,
+      "estop_count_total": 3,
+      "controllers": [
+        "dwa"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "mixed": {
+      "runs": 20,
+      "success_rate": 0.9,
+      "time_to_goal_s_median": 33.775,
+      "path_length_m_median": 12.3733,
+      "smoothness_median": 33.6619,
+      "min_clearance_m_median": 0.1249,
+      "min_clearance_m_worst": 0.0465,
+      "estop_count_total": 0,
+      "controllers": [
+        "dwa"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    }
+  },
+  "dynamic_stress": 0.825,
+  "anomalies": [
+    {
+      "scenario": "static_avoid",
+      "seed": 105,
+      "run": 5,
+      "controller": "dwa",
+      "failure_class": "other",
+      "min_clearance_m": 0.2543,
+      "t_end_s": 43.4333
+    },
+    {
+      "scenario": "static_avoid",
+      "seed": 112,
+      "run": 12,
+      "controller": "dwa",
+      "failure_class": "other",
+      "min_clearance_m": 0.1947,
+      "t_end_s": 45.4667
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 202,
+      "run": 2,
+      "controller": "dwa",
+      "failure_class": "timeout",
+      "min_clearance_m": 0.6975,
+      "t_end_s": 60.4833
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 204,
+      "run": 4,
+      "controller": "dwa",
+      "failure_class": "timeout",
+      "min_clearance_m": 0.7055,
+      "t_end_s": 60.1166
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 210,
+      "run": 10,
+      "controller": "dwa",
+      "failure_class": "timeout",
+      "min_clearance_m": 0.7313,
+      "t_end_s": 60.4834
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 213,
+      "run": 13,
+      "controller": "dwa",
+      "failure_class": "timeout",
+      "min_clearance_m": 0.7029,
+      "t_end_s": 60.5
+    },
+    {
+      "scenario": "dynamic_pedestrian",
+      "seed": 214,
+      "run": 14,
+      "controller": "dwa",
+      "failure_class": "timeout",
+      "min_clearance_m": 0.8148,
+      "t_end_s": 60.4833
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 303,
+      "run": 3,
+      "controller": "dwa",
+      "failure_class": "other",
+      "min_clearance_m": 1.2207,
+      "t_end_s": 30.7833
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 306,
+      "run": 6,
+      "controller": "dwa",
+      "failure_class": "other",
+      "min_clearance_m": 3.0718,
+      "t_end_s": 30.7667
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 311,
+      "run": 11,
+      "controller": "dwa",
+      "failure_class": "other",
+      "min_clearance_m": 4.5119,
+      "t_end_s": 30.75
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 316,
+      "run": 16,
+      "controller": "dwa",
+      "failure_class": "other",
+      "min_clearance_m": 0.1089,
+      "t_end_s": 42.25
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 318,
+      "run": 18,
+      "controller": "dwa",
+      "failure_class": "other",
+      "min_clearance_m": 0.0481,
+      "t_end_s": 46.7667
+    },
+    {
+      "scenario": "dead_end",
+      "seed": 409,
+      "run": 9,
+      "controller": "dwa",
+      "failure_class": "other",
+      "min_clearance_m": 0.1244,
+      "t_end_s": 49.5833
+    },
+    {
+      "scenario": "dead_end",
+      "seed": 410,
+      "run": 10,
+      "controller": "dwa",
+      "failure_class": "other",
+      "min_clearance_m": 0.0799,
+      "t_end_s": 40.55
+    },
+    {
+      "scenario": "dead_end",
+      "seed": 416,
+      "run": 16,
+      "controller": "dwa",
+      "failure_class": "other",
+      "min_clearance_m": 1.853,
+      "t_end_s": 33.5
+    },
+    {
+      "scenario": "mixed",
+      "seed": 502,
+      "run": 2,
+      "controller": "dwa",
+      "failure_class": "other",
+      "min_clearance_m": 0.2033,
+      "t_end_s": 55.65
+    },
+    {
+      "scenario": "mixed",
+      "seed": 506,
+      "run": 6,
+      "controller": "dwa",
+      "failure_class": "other",
+      "min_clearance_m": 0.1995,
+      "t_end_s": 51.3333
+    }
+  ]
+}

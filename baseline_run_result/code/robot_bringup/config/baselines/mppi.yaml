@@ -1,0 +1,104 @@
+# 基线 MPPI 参数 —— 9-1 §5.2 候选初始值（Omni 主对比）
+# 注意：vx_max / vy_max 是**分别**约束，合速度由 limiter 执行层保证 ≤0.6（见 flat_speed_limiter）
+controller_server:
+  ros__parameters:
+    use_sim_time: true
+    controller_frequency: 20.0
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.001   # 全向底盘：横移速度必须进里程计，不能用 0.5 当死区
+    min_theta_velocity_threshold: 0.001
+    progress_checker_plugins: ["progress_checker"]
+    goal_checker_plugins: ["general_goal_checker"]
+    controller_plugins: ["FollowPath"]
+
+    # progress_checker 段已删除：多控制器同栈时它是 server 级参数，唯一来源在
+    # nav2_baseline.launch.py 的 SHARED_CONTROLLER_PARAMS（礼让行人后 10 s→30 s）。
+    general_goal_checker:
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.18
+      yaw_goal_tolerance: 0.15
+      stateful: true
+
+    FollowPath:
+      plugin: "nav2_mppi_controller::MPPIController"
+      motion_model: "Omni"             # diff 迁移 DiffDrive
+      time_steps: 56
+      model_dt: 0.05
+      batch_size: 1000
+      iteration_count: 1
+      vx_std: 0.2
+      vy_std: 0.2                      # diff 迁移 0.0
+      wz_std: 0.4
+      vx_max: 0.6
+      vx_min: -0.6
+      vy_max: 0.6                      # diff 迁移 0.0
+      wz_max: 1.5
+      temperature: 0.3
+      gamma: 0.015
+      prune_distance: 1.5
+      transform_tolerance: 0.1
+      visualize: false
+      TrajectoryVisualizer:
+        trajectory_step: 5
+        time_step: 3
+      critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic",
+                "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
+      ConstraintCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 4.0
+      GoalCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 5.0
+        threshold_to_consider: 1.4
+      GoalAngleCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 3.0
+        threshold_to_consider: 0.5
+      PreferForwardCritic:
+        enabled: false                 # omni 关闭；diff 迁移 5.0
+        cost_power: 1
+        cost_weight: 5.0
+        threshold_to_consider: 0.5
+      CostCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 3.81
+        critical_cost: 300.0
+        consider_footprint: true
+        collision_cost: 1000000.0
+        near_goal_distance: 1.0
+      PathAlignCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 10.0
+        max_path_occupancy_ratio: 0.05
+        trajectory_point_step: 4
+        threshold_to_consider: 0.5
+        offset_from_furthest: 20
+        use_path_orientations: false
+      PathFollowCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 5.0
+        offset_from_furthest: 5
+        threshold_to_consider: 1.4
+      PathAngleCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 2.0
+        offset_from_furthest: 4
+        threshold_to_consider: 0.5
+        max_angle_to_furthest: 1.0
+        mode: 0
+      TwirlingCritic:
+        enabled: true                  # omni 10.0；diff 关闭
+        cost_power: 1
+        cost_weight: 10.0
+      VelocityDeadbandCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 35.0
+        deadband_velocities: [0.05, 0.05, 0.05]

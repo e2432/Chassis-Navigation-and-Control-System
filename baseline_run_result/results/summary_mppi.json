@@ -1,0 +1,177 @@
+{
+  "per_scenario": {
+    "static_avoid": {
+      "runs": 20,
+      "success_rate": 0.95,
+      "time_to_goal_s_median": 21.75,
+      "path_length_m_median": 10.5252,
+      "smoothness_median": 7.401,
+      "min_clearance_m_median": 0.2361,
+      "min_clearance_m_worst": 0.0944,
+      "estop_count_total": 0,
+      "controllers": [
+        "mppi"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "dynamic_pedestrian": {
+      "runs": 20,
+      "success_rate": 1.0,
+      "time_to_goal_s_median": 30.55,
+      "path_length_m_median": 9.8942,
+      "smoothness_median": 6.5544,
+      "min_clearance_m_median": 0.9874,
+      "min_clearance_m_worst": 0.8695,
+      "estop_count_total": 0,
+      "controllers": [
+        "mppi"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "narrow_passage": {
+      "runs": 20,
+      "success_rate": 0.75,
+      "time_to_goal_s_median": 23.7,
+      "path_length_m_median": 11.8754,
+      "smoothness_median": 6.9382,
+      "min_clearance_m_median": 0.2254,
+      "min_clearance_m_worst": 0.1922,
+      "estop_count_total": 6,
+      "controllers": [
+        "mppi"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "dead_end": {
+      "runs": 20,
+      "success_rate": 0.85,
+      "time_to_goal_s_median": 24.9167,
+      "path_length_m_median": 12.3648,
+      "smoothness_median": 7.9198,
+      "min_clearance_m_median": 0.2157,
+      "min_clearance_m_worst": 0.1872,
+      "estop_count_total": 3,
+      "controllers": [
+        "mppi"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "mixed": {
+      "runs": 20,
+      "success_rate": 0.95,
+      "time_to_goal_s_median": 34.6,
+      "path_length_m_median": 12.4853,
+      "smoothness_median": 10.0298,
+      "min_clearance_m_median": 0.232,
+      "min_clearance_m_worst": 0.0834,
+      "estop_count_total": 0,
+      "controllers": [
+        "mppi"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    }
+  },
+  "dynamic_stress": 0.975,
+  "anomalies": [
+    {
+      "scenario": "static_avoid",
+      "seed": 105,
+      "run": 5,
+      "controller": "mppi",
+      "failure_class": "other",
+      "min_clearance_m": 0.3152,
+      "t_end_s": 45.7167
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 303,
+      "run": 3,
+      "controller": "mppi",
+      "failure_class": "other",
+      "min_clearance_m": 1.2239,
+      "t_end_s": 30.7667
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 306,
+      "run": 6,
+      "controller": "mppi",
+      "failure_class": "other",
+      "min_clearance_m": 3.0718,
+      "t_end_s": 30.75
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 311,
+      "run": 11,
+      "controller": "mppi",
+      "failure_class": "other",
+      "min_clearance_m": 4.5119,
+      "t_end_s": 30.75
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 316,
+      "run": 16,
+      "controller": "mppi",
+      "failure_class": "other",
+      "min_clearance_m": 0.2156,
+      "t_end_s": 43.95
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 318,
+      "run": 18,
+      "controller": "mppi",
+      "failure_class": "other",
+      "min_clearance_m": 0.2073,
+      "t_end_s": 48.6833
+    },
+    {
+      "scenario": "dead_end",
+      "seed": 409,
+      "run": 9,
+      "controller": "mppi",
+      "failure_class": "other",
+      "min_clearance_m": 0.201,
+      "t_end_s": 53.45
+    },
+    {
+      "scenario": "dead_end",
+      "seed": 410,
+      "run": 10,
+      "controller": "mppi",
+      "failure_class": "other",
+      "min_clearance_m": 0.1971,
+      "t_end_s": 42.65
+    },
+    {
+      "scenario": "dead_end",
+      "seed": 416,
+      "run": 16,
+      "controller": "mppi",
+      "failure_class": "other",
+      "min_clearance_m": 1.8422,
+      "t_end_s": 34.65
+    },
+    {
+      "scenario": "mixed",
+      "seed": 506,
+      "run": 6,
+      "controller": "mppi",
+      "failure_class": "other",
+      "min_clearance_m": 0.2661,
+      "t_end_s": 52.3833
+    }
+  ]
+}
