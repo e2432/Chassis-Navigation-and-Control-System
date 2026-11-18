@@ -32,10 +32,31 @@ controller_server:
         omega_max: 1.5
         acc_max: 1.0
         alpha_max: 2.0
-      # D2 最小直通跟随器参数（W6 换真 MPC 后由 MPC 参数替代）
+      # D2 最小直通跟随器参数（保留声明仅为兼容 D3 smoke；W6 已改由 MPC 输出）
       desired_linear_vel: 0.6
       lookahead_dist: 0.5
       rotation_gain: 2.0
+      # W6 MPC core（默认值与 prototype/mpc_numpy/mpc_proto/mpc.py 一致）
+      mpc:
+        N: 40
+        dt: 0.05
+        v_ref: 0.6
+        q_lat: 4.0
+        q_long: 0.4
+        q_theta: 1.5
+        r_v: 0.05
+        r_omega: 0.02
+        r_dv: 0.20
+        r_domega: 0.10
+        terminal_factor: 2.0
+        rho_slack: 80.0
+        d_safe: 0.30
+        n_sqp: 2
+        eps_abs: 1.0e-3
+        eps_rel: 1.0e-3
+        max_iter: 10000
+        slack: true
+        terminal: true
       # D3 动态障碍心跳失联阈值（s，ROS 时钟）
       obstacle_timeout: 0.5
       # 全局路径 -> 局部 costmap 帧的 TF 查询超时（s）

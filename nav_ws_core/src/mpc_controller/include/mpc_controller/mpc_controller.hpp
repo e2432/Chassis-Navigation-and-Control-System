@@ -4,13 +4,18 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <vector>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
+#include "mpc_controller/msg/mpc_diagnostics.hpp"
 #include "mpc_controller/msg/obstacle_state_array.hpp"
+#include "mpc_controller/mpc_core.hpp"
+#include "mpc_controller/reference.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_core/controller.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -46,14 +51,12 @@ public:
 
 private:
   void obstacleCallback(const mpc_controller::msg::ObstacleStateArray::SharedPtr msg);
+  void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
   bool obstacleHeartbeatValid(const rclcpp::Time & now) const;
   bool transformPlanToCostmap(
     const rclcpp::Time & stamp,
     nav_msgs::msg::Path & transformed_plan) const;
-  bool findLookaheadPoint(
-    const nav_msgs::msg::Path & plan,
-    const geometry_msgs::msg::Pose & robot_pose,
-    double & look_x, double & look_y) const;
+  bool buildReference(const nav_msgs::msg::Path & plan) const;
   double effectiveMaxLinearSpeed() const;
 
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
@@ -72,18 +75,39 @@ private:
   double acc_max_{1.0};
   double alpha_max_{2.0};
 
-  // Minimal passthrough follower parameters (replaced by MPC in W6).
+  // Legacy W5 passthrough parameters (kept declared for smoke compatibility).
   double desired_linear_vel_{0.6};
   double lookahead_dist_{0.5};
   double rotation_gain_{2.0};
   double transform_tolerance_{0.2};
+
+  // W6 MPC core (QP builder + SQP + reference generator).
+  MpcConfig mpc_config_;
+  ChassisParams chassis_params_;
+  double v_ref_{0.6};
+  std::unique_ptr<MpcCore> mpc_;
+  mutable std::unique_ptr<ReferencePath> reference_;
+  rclcpp::Time plan_start_{0, 0, RCL_SYSTEM_TIME};
+  bool has_plan_start_{false};
 
   // Dynamic obstacle heartbeat (W5 D3 semantics; real tracker arrives in W6).
   rclcpp::Subscription<mpc_controller::msg::ObstacleStateArray>::SharedPtr obstacle_sub_;
   mutable std::mutex obstacle_mutex_;
   bool has_valid_obstacle_msg_{false};
   rclcpp::Time last_obstacle_received_{0, 0, RCL_SYSTEM_TIME};
+  std::vector<Obstacle> obstacles_;
   double obstacle_timeout_{0.5};
+
+  // W6 static distance field from the frozen static map (/map).
+  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
+  rclcpp::Publisher<mpc_controller::msg::MpcDiagnostics>::SharedPtr diagnostics_pub_;
+  mutable std::mutex field_mutex_;
+  std::shared_ptr<GridDistanceField> static_field_;
+  std::string static_field_frame_;
+  bool use_static_distance_field_{true};
+  double static_field_max_distance_{5.0};
+  std::string static_map_topic_{"/map"};
+  std::string diagnostics_topic_{"/mpc/diagnostics"};
 
   double speed_limit_{0.0};  // nav2_costmap_2d::NO_SPEED_LIMIT
   bool speed_limit_is_percentage_{false};

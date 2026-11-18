@@ -117,8 +117,54 @@ int main(int argc, char ** argv)
     return 2;
   }
 
+  // Optional static field block:
+  //   field <w> <h> <res> <ox> <oy> <r00> <r01> <r10> <r11> <tx> <ty>
+  //   <w*h occupancy values>
+  mpc_controller::GridDistanceField static_field;
+  bool has_field = false;
+  Eigen::Matrix2d map_to_odom_rotation = Eigen::Matrix2d::Identity();
+  Eigen::Vector2d map_to_odom_translation = Eigen::Vector2d::Zero();
+  input.clear();
+  std::string extra;
+  if (input >> extra) {
+    if (extra != "field") {
+      std::cerr << "unknown trailing block: " << extra << '\n';
+      return 2;
+    }
+    int field_width = 0;
+    int field_height = 0;
+    double resolution = 0.0;
+    double origin_x = 0.0;
+    double origin_y = 0.0;
+    input >> field_width >> field_height >> resolution >> origin_x >> origin_y;
+    input >> map_to_odom_rotation(0, 0) >> map_to_odom_rotation(0, 1) >>
+      map_to_odom_rotation(1, 0) >> map_to_odom_rotation(1, 1) >>
+      map_to_odom_translation.x() >> map_to_odom_translation.y();
+    if (!input || field_width <= 0 || field_height <= 0 || resolution <= 0.0) {
+      std::cerr << "invalid field header\n";
+      return 2;
+    }
+    std::vector<uint8_t> occupied(
+      static_cast<std::size_t>(field_width) * field_height, 0);
+    for (auto & cell : occupied) {
+      int value = 0;
+      input >> value;
+      cell = value != 0 ? 1 : 0;
+    }
+    if (!input) {
+      std::cerr << "field data ended early\n";
+      return 2;
+    }
+    static_field.build(
+      field_width, field_height, resolution, origin_x, origin_y, occupied, 5.0);
+    has_field = true;
+  }
+
   const mpc_controller::MpcCore core(cfg, chassis);
-  const mpc_controller::QpProblem qp =
+  const mpc_controller::QpProblem qp = has_field ?
+    core.buildQp(
+    z0, zbar, ubar, z_ref, obstacles, u_prev, &static_field,
+    map_to_odom_rotation, map_to_odom_translation) :
     core.buildQp(z0, zbar, ubar, z_ref, obstacles, u_prev);
   const mpc_controller::QpSolution solution = core.solveQp(qp);
 

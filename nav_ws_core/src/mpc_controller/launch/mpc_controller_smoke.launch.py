@@ -3,9 +3,11 @@
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, EmitEvent, LogInfo,
                             RegisterEventHandler)
+from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessExit
 from launch.events import Shutdown
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import (LaunchConfiguration, PathJoinSubstitution,
+                                  PythonExpression)
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
@@ -21,6 +23,14 @@ def generate_launch_description() -> LaunchDescription:
     map_odom_dynamic_seconds = LaunchConfiguration("map_odom_dynamic_seconds")
     tf_failure_expected = LaunchConfiguration("tf_failure_expected")
     use_sim_time = LaunchConfiguration("use_sim_time")
+    obstacle_source = LaunchConfiguration("obstacle_source")
+    scenario_name = LaunchConfiguration("scenario_name")
+    scenario_run = LaunchConfiguration("scenario_run")
+    publish_static_map = LaunchConfiguration("publish_static_map")
+    use_mock = IfCondition(
+        PythonExpression(["'", obstacle_source, "' == 'mock'"]))
+    use_scenario = IfCondition(
+        PythonExpression(["'", obstacle_source, "' == 'scenario'"]))
     params_file = PathJoinSubstitution(
         [FindPackageShare("mpc_controller"), "config", "nav2_mpc_params.yaml"])
 
@@ -46,11 +56,38 @@ def generate_launch_description() -> LaunchDescription:
         executable="mock_obstacle_heartbeat.py",
         name="mock_obstacle_heartbeat",
         output="screen",
+        condition=use_mock,
         parameters=[{
             "use_sim_time": ParameterValue(use_sim_time, value_type=bool),
             "rate_hz": 10.0,
             "enabled": False,
         }],
+    )
+
+    # TEST ONLY: non-empty obstacles from the frozen scenario table.
+    scenario_obstacles = Node(
+        package="mpc_controller",
+        executable="scenario_obstacle_publisher.py",
+        name="scenario_obstacle_publisher",
+        output="screen",
+        condition=use_scenario,
+        parameters=[{
+            "use_sim_time": ParameterValue(use_sim_time, value_type=bool),
+            "scenario": ParameterValue(scenario_name, value_type=str),
+            "run": ParameterValue(scenario_run, value_type=int),
+            "rate_hz": 10.0,
+            "frame_id": "odom",
+        }],
+    )
+
+    # TEST ONLY: static map for the distance-field path.
+    static_map = Node(
+        package="mpc_controller",
+        executable="fake_static_map.py",
+        name="fake_static_map",
+        output="screen",
+        condition=IfCondition(publish_static_map),
+        parameters=[{"use_sim_time": ParameterValue(use_sim_time, value_type=bool)}],
     )
 
     controller_server = Node(
@@ -96,6 +133,8 @@ def generate_launch_description() -> LaunchDescription:
             "tf_failure_expected": ParameterValue(tf_failure_expected, value_type=bool),
             "map_odom_dynamic_seconds": ParameterValue(
                 map_odom_dynamic_seconds, value_type=float),
+            "obstacle_source": ParameterValue(obstacle_source, value_type=str),
+            "expect_static_field": ParameterValue(publish_static_map, value_type=bool),
         }],
     )
 
@@ -131,14 +170,30 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument(
             "use_sim_time", default_value="false",
             description="D3 smoke 用系统时钟；有 /clock 时才设 true"),
+        DeclareLaunchArgument(
+            "obstacle_source", default_value="mock",
+            choices=["mock", "scenario"],
+            description="mock=空数组心跳（默认）；scenario=TEST ONLY 非空场景障碍"),
+        DeclareLaunchArgument(
+            "scenario_name", default_value="dynamic_pedestrian",
+            description="obstacle_source=scenario 时的场景键"),
+        DeclareLaunchArgument(
+            "scenario_run", default_value="1",
+            description="obstacle_source=scenario 时的 run 序号"),
+        DeclareLaunchArgument(
+            "publish_static_map", default_value="false",
+            description="TEST ONLY: 发布假 /map 以验证静态距离场"),
         LogInfo(msg=["[W5 D3] mpc_controller smoke: chassis_type=", chassis_type,
                      " base_yaw_deg=", base_yaw_deg, " map=(",
                      map_x, ",", map_y, ",", map_yaw_deg, ")",
                      " publish_map_odom=", publish_map_odom,
                      " map_odom_dynamic_seconds=", map_odom_dynamic_seconds,
-                     " tf_failure_expected=", tf_failure_expected]),
+                     " tf_failure_expected=", tf_failure_expected,
+                     " obstacle_source=", obstacle_source]),
         fake_sensors,
         heartbeat,
+        scenario_obstacles,
+        static_map,
         controller_server,
         lifecycle_manager,
         smoke_check,

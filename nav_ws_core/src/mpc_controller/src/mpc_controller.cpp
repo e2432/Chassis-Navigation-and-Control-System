@@ -1,6 +1,7 @@
 #include "mpc_controller/mpc_controller.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <functional>
 #include <limits>
@@ -64,6 +65,35 @@ void MpcController::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, prefix + "transform_tolerance", rclcpp::ParameterValue(0.2));
 
+  // W6 MPC parameters (defaults mirror prototype/mpc_numpy/mpc_proto/mpc.py).
+  auto declare = [&node, &prefix](
+    const std::string & suffix, const rclcpp::ParameterValue & value) {
+      nav2_util::declare_parameter_if_not_declared(node, prefix + suffix, value);
+    };
+  declare("mpc.N", rclcpp::ParameterValue(40));
+  declare("mpc.dt", rclcpp::ParameterValue(0.05));
+  declare("mpc.v_ref", rclcpp::ParameterValue(0.6));
+  declare("mpc.q_lat", rclcpp::ParameterValue(4.0));
+  declare("mpc.q_long", rclcpp::ParameterValue(0.4));
+  declare("mpc.q_theta", rclcpp::ParameterValue(1.5));
+  declare("mpc.r_v", rclcpp::ParameterValue(0.05));
+  declare("mpc.r_omega", rclcpp::ParameterValue(0.02));
+  declare("mpc.r_dv", rclcpp::ParameterValue(0.20));
+  declare("mpc.r_domega", rclcpp::ParameterValue(0.10));
+  declare("mpc.terminal_factor", rclcpp::ParameterValue(2.0));
+  declare("mpc.rho_slack", rclcpp::ParameterValue(80.0));
+  declare("mpc.d_safe", rclcpp::ParameterValue(0.30));
+  declare("mpc.n_sqp", rclcpp::ParameterValue(2));
+  declare("mpc.eps_abs", rclcpp::ParameterValue(1e-3));
+  declare("mpc.eps_rel", rclcpp::ParameterValue(1e-3));
+  declare("mpc.max_iter", rclcpp::ParameterValue(10000));
+  declare("mpc.slack", rclcpp::ParameterValue(true));
+  declare("mpc.terminal", rclcpp::ParameterValue(true));
+  declare("use_static_distance_field", rclcpp::ParameterValue(true));
+  declare("static_map_topic", rclcpp::ParameterValue("/map"));
+  declare("static_field_max_distance", rclcpp::ParameterValue(5.0));
+  declare("diagnostics_topic", rclcpp::ParameterValue("/mpc/diagnostics"));
+
   chassis_type_ = node->get_parameter(prefix + "type").as_string();
   robot_radius_ = node->get_parameter(prefix + "footprint.radius").as_double();
   v_max_ = node->get_parameter(prefix + "limits.v_max").as_double();
@@ -77,6 +107,34 @@ void MpcController::configure(
   rotation_gain_ = node->get_parameter(prefix + "rotation_gain").as_double();
   obstacle_timeout_ = node->get_parameter(prefix + "obstacle_timeout").as_double();
   transform_tolerance_ = node->get_parameter(prefix + "transform_tolerance").as_double();
+
+  mpc_config_.N = static_cast<int>(node->get_parameter(prefix + "mpc.N").as_int());
+  mpc_config_.dt = node->get_parameter(prefix + "mpc.dt").as_double();
+  v_ref_ = node->get_parameter(prefix + "mpc.v_ref").as_double();
+  mpc_config_.q_lat = node->get_parameter(prefix + "mpc.q_lat").as_double();
+  mpc_config_.q_long = node->get_parameter(prefix + "mpc.q_long").as_double();
+  mpc_config_.q_theta = node->get_parameter(prefix + "mpc.q_theta").as_double();
+  mpc_config_.r_v = node->get_parameter(prefix + "mpc.r_v").as_double();
+  mpc_config_.r_omega = node->get_parameter(prefix + "mpc.r_omega").as_double();
+  mpc_config_.r_dv = node->get_parameter(prefix + "mpc.r_dv").as_double();
+  mpc_config_.r_domega = node->get_parameter(prefix + "mpc.r_domega").as_double();
+  mpc_config_.terminal_factor =
+    node->get_parameter(prefix + "mpc.terminal_factor").as_double();
+  mpc_config_.rho_slack = node->get_parameter(prefix + "mpc.rho_slack").as_double();
+  mpc_config_.d_safe = node->get_parameter(prefix + "mpc.d_safe").as_double();
+  mpc_config_.n_sqp = static_cast<int>(node->get_parameter(prefix + "mpc.n_sqp").as_int());
+  mpc_config_.eps_abs = node->get_parameter(prefix + "mpc.eps_abs").as_double();
+  mpc_config_.eps_rel = node->get_parameter(prefix + "mpc.eps_rel").as_double();
+  mpc_config_.max_iter =
+    static_cast<int>(node->get_parameter(prefix + "mpc.max_iter").as_int());
+  mpc_config_.slack = node->get_parameter(prefix + "mpc.slack").as_bool();
+  mpc_config_.terminal = node->get_parameter(prefix + "mpc.terminal").as_bool();
+  use_static_distance_field_ =
+    node->get_parameter(prefix + "use_static_distance_field").as_bool();
+  static_map_topic_ = node->get_parameter(prefix + "static_map_topic").as_string();
+  static_field_max_distance_ =
+    node->get_parameter(prefix + "static_field_max_distance").as_double();
+  diagnostics_topic_ = node->get_parameter(prefix + "diagnostics_topic").as_string();
 
   if (chassis_type_ != "omni" && chassis_type_ != "mecanum" && chassis_type_ != "diff") {
     throw std::runtime_error(
@@ -92,12 +150,37 @@ void MpcController::configure(
   {
     throw std::runtime_error("MpcController: non-positive value in chassis/follower parameters");
   }
+  if (mpc_config_.N <= 0 || mpc_config_.dt <= 0.0 || v_ref_ <= 0.0 ||
+    mpc_config_.q_lat <= 0.0 || mpc_config_.d_safe < 0.0 || mpc_config_.n_sqp <= 0 ||
+    mpc_config_.max_iter <= 0 || mpc_config_.eps_abs <= 0.0 || mpc_config_.eps_rel <= 0.0 ||
+    static_field_max_distance_ <= 0.0)
+  {
+    throw std::runtime_error("MpcController: invalid MPC parameter");
+  }
+
+  chassis_params_.radius = robot_radius_;
+  chassis_params_.v_min = v_min_;
+  chassis_params_.v_max = v_max_;
+  chassis_params_.vy_max = vy_max_;
+  chassis_params_.omega_max = omega_max_;
+  chassis_params_.acc_max = acc_max_;
+  chassis_params_.alpha_max = alpha_max_;
+  mpc_ = std::make_unique<MpcCore>(mpc_config_, chassis_params_);
 
   obstacle_sub_ = node->create_subscription<mpc_controller::msg::ObstacleStateArray>(
     "/mpc/obstacles", rclcpp::QoS(10),
     std::bind(&MpcController::obstacleCallback, this, std::placeholders::_1));
   has_valid_obstacle_msg_ = false;
   last_obstacle_received_ = node->now();
+
+  diagnostics_pub_ =
+    node->create_publisher<mpc_controller::msg::MpcDiagnostics>(
+    diagnostics_topic_, rclcpp::QoS(10));
+  if (use_static_distance_field_) {
+    map_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
+      static_map_topic_, rclcpp::QoS(1).transient_local().reliable(),
+      std::bind(&MpcController::mapCallback, this, std::placeholders::_1));
+  }
 
   RCLCPP_INFO(
     logger_,
@@ -110,6 +193,19 @@ void MpcController::configure(
     "obstacle_timeout=%.2f transform_tolerance=%.2f",
     plugin_name_.c_str(), desired_linear_vel_, lookahead_dist_, rotation_gain_,
     obstacle_timeout_, transform_tolerance_);
+  RCLCPP_INFO(
+    logger_,
+    "[%s] MPC: N=%d dt=%.3f v_ref=%.2f d_safe=%.2f n_sqp=%d slack=%d terminal=%d "
+    "eps=%.1e/%.1e max_iter=%d",
+    plugin_name_.c_str(), mpc_config_.N, mpc_config_.dt, v_ref_, mpc_config_.d_safe,
+    mpc_config_.n_sqp, static_cast<int>(mpc_config_.slack),
+    static_cast<int>(mpc_config_.terminal), mpc_config_.eps_abs, mpc_config_.eps_rel,
+    mpc_config_.max_iter);
+  RCLCPP_INFO(
+    logger_,
+    "[%s] static distance field=%d topic='%s' max=%.2f; diagnostics topic='%s'",
+    plugin_name_.c_str(), static_cast<int>(use_static_distance_field_),
+    static_map_topic_.c_str(), static_field_max_distance_, diagnostics_topic_.c_str());
 }
 
 void MpcController::cleanup()
@@ -118,8 +214,18 @@ void MpcController::cleanup()
   {
     std::lock_guard<std::mutex> lock(obstacle_mutex_);
     has_valid_obstacle_msg_ = false;
+    obstacles_.clear();
   }
   obstacle_sub_.reset();
+  map_sub_.reset();
+  diagnostics_pub_.reset();
+  {
+    std::lock_guard<std::mutex> lock(field_mutex_);
+    static_field_.reset();
+    static_field_frame_.clear();
+  }
+  reference_.reset();
+  mpc_.reset();
   global_plan_ = nav_msgs::msg::Path();
 }
 
@@ -142,6 +248,16 @@ void MpcController::setPlan(const nav_msgs::msg::Path & path)
   // Keep the raw global path and its frame. Transform per control cycle:
   // map->odom may change when localization corrects the pose.
   global_plan_ = path;
+  auto node = node_.lock();
+  if (node) {
+    plan_start_ = node->now();
+    has_plan_start_ = true;
+  }
+  reference_.reset();
+  if (mpc_) {
+    // New plan: reset warm start and fallback streak.
+    mpc_ = std::make_unique<MpcCore>(mpc_config_, chassis_params_);
+  }
   RCLCPP_DEBUG(
     logger_, "[%s] setPlan: %zu poses in frame '%s'", plugin_name_.c_str(),
     global_plan_.poses.size(), global_plan_.header.frame_id.c_str());
@@ -209,32 +325,127 @@ geometry_msgs::msg::TwistStamped MpcController::computeVelocityCommands(
     return cmd_vel;
   }
 
-  double look_x = 0.0;
-  double look_y = 0.0;
-  if (!findLookaheadPoint(plan_in_costmap, pose.pose, look_x, look_y)) {
+  if (!buildReference(plan_in_costmap)) {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *node->get_clock(), 2000,
+      "[%s] cannot build reference from the transformed plan; zero velocity",
+      plugin_name_.c_str());
     return cmd_vel;
   }
 
-  const double yaw = tf2::getYaw(pose.pose.orientation);
-  const double dx = look_x - pose.pose.position.x;
-  const double dy = look_y - pose.pose.position.y;
-  const double cos_yaw = std::cos(yaw);
-  const double sin_yaw = std::sin(yaw);
-  const double x_r = cos_yaw * dx + sin_yaw * dy;
-  const double y_r = -sin_yaw * dx + cos_yaw * dy;
-  const double heading_error = std::atan2(y_r, x_r);
+  // Reference time law is anchored at setPlan(): s(t) = min(v_ref * t, L).
+  const double t_elapsed = has_plan_start_ ?
+    std::max(0.0, (now - plan_start_).seconds()) : 0.0;
+  Eigen::MatrixXd z_ref;
+  Eigen::MatrixXd u_ref;
+  reference_->sequence(t_elapsed, z_ref, u_ref);
 
-  const double speed = std::min(desired_linear_vel_, effectiveMaxLinearSpeed());
-  const double vx = speed * std::cos(heading_error);
-  cmd_vel.twist.linear.x = std::clamp(vx, v_min_, speed);
-  if (chassis_type_ == "diff") {
-    cmd_vel.twist.linear.y = 0.0;
-  } else {
-    cmd_vel.twist.linear.y = std::clamp(
-      speed * std::sin(heading_error), -vy_max_, vy_max_);
+  std::vector<Obstacle> obstacles;
+  {
+    std::lock_guard<std::mutex> lock(obstacle_mutex_);
+    obstacles = obstacles_;
   }
-  cmd_vel.twist.angular.z = std::clamp(
-    rotation_gain_ * heading_error, -omega_max_, omega_max_);
+
+  std::shared_ptr<GridDistanceField> static_field;
+  Eigen::Matrix2d map_to_odom_rotation = Eigen::Matrix2d::Identity();
+  Eigen::Vector2d map_to_odom_translation = Eigen::Vector2d::Zero();
+  if (use_static_distance_field_) {
+    std::string field_frame;
+    {
+      std::lock_guard<std::mutex> lock(field_mutex_);
+      static_field = static_field_;
+      field_frame = static_field_frame_;
+    }
+    if (static_field && !static_field->empty() && !field_frame.empty() &&
+      field_frame != costmap_frame)
+    {
+      try {
+        const auto transform = tf_->lookupTransform(
+          costmap_frame, field_frame, now,
+          rclcpp::Duration::from_seconds(transform_tolerance_));
+        const double yaw = tf2::getYaw(transform.transform.rotation);
+        map_to_odom_rotation = Eigen::Rotation2Dd(yaw).toRotationMatrix();
+        map_to_odom_translation = Eigen::Vector2d(
+          transform.transform.translation.x, transform.transform.translation.y);
+      } catch (const tf2::TransformException & ex) {
+        RCLCPP_WARN_THROTTLE(
+          logger_, *node->get_clock(), 2000,
+          "[%s] static map transform '%s' -> '%s' failed: %s; field disabled this cycle",
+          plugin_name_.c_str(), field_frame.c_str(), costmap_frame.c_str(), ex.what());
+        static_field.reset();
+      }
+    }
+  }
+
+  const Eigen::Vector3d z0(
+    pose.pose.position.x, pose.pose.position.y, tf2::getYaw(pose.pose.orientation));
+  MpcResult result;
+  double solve_ms = 0.0;
+  try {
+    const auto solve_start = std::chrono::steady_clock::now();
+    result = mpc_->solve(
+      z0, z_ref, u_ref, obstacles, static_field.get(),
+      map_to_odom_rotation, map_to_odom_translation);
+    solve_ms = std::chrono::duration<double, std::milli>(
+      std::chrono::steady_clock::now() - solve_start).count();
+  } catch (const std::exception & ex) {
+    result.status = std::string("exception:") + ex.what();
+  }
+  RCLCPP_INFO_THROTTLE(
+    logger_, *node->get_clock(), 1000,
+    "[%s] MPC solve %.2f ms (status=%s qp_iters=%d obstacles=%zu field=%d)",
+    plugin_name_.c_str(), solve_ms, result.status.c_str(), result.qp_iterations,
+    obstacles.size(), static_cast<int>(static_field != nullptr));
+
+  mpc_controller::msg::MpcDiagnostics diagnostics;
+  diagnostics.header.stamp = now;
+  diagnostics.header.frame_id = costmap_frame;
+  diagnostics.success = result.success;
+  diagnostics.fallback = result.fallback;
+  diagnostics.alarm = result.alarm;
+  diagnostics.solve_ms = solve_ms;
+  diagnostics.qp_iterations =
+    static_cast<uint32_t>(std::max(0, result.qp_iterations));
+  diagnostics.fallback_streak =
+    static_cast<uint32_t>(std::max(0, result.fallback_streak));
+  diagnostics.max_slack = result.max_slack;
+  diagnostics.obstacle_count = static_cast<uint32_t>(obstacles.size());
+  diagnostics.static_field_used = static_field != nullptr;
+  diagnostics.status = result.status;
+  diagnostics_pub_->publish(diagnostics);
+
+  if (!result.success) {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *node->get_clock(), 1000,
+      "[%s] MPC solve failed (status=%s fallback_streak=%d alarm=%d); zero velocity",
+      plugin_name_.c_str(), result.status.c_str(), result.fallback_streak,
+      static_cast<int>(result.alarm));
+    return cmd_vel;
+  }
+
+  Eigen::Vector3d u = result.u;
+  if (chassis_type_ == "diff") {
+    u.y() = 0.0;
+  }
+  u.x() = std::clamp(u.x(), v_min_, v_max_);
+  u.y() = std::clamp(u.y(), -vy_max_, vy_max_);
+  u.z() = std::clamp(u.z(), -omega_max_, omega_max_);
+
+  // The shared execution layer owns the task-level planar speed limit;
+  // only an explicit Nav2 speed limit is applied inside the controller.
+  if (speed_limit_ != nav2_costmap_2d::NO_SPEED_LIMIT) {
+    const double max_speed = effectiveMaxLinearSpeed();
+    const double planar = std::hypot(u.x(), u.y());
+    if (max_speed > 0.0 && planar > max_speed) {
+      const double scale = max_speed / planar;
+      u.x() *= scale;
+      u.y() *= scale;
+    }
+  }
+
+  cmd_vel.twist.linear.x = u.x();
+  cmd_vel.twist.linear.y = u.y();
+  cmd_vel.twist.angular.z = u.z();
   return cmd_vel;
 }
 
@@ -278,9 +489,82 @@ void MpcController::obstacleCallback(
     return;
   }
 
+  const rclcpp::Time header_stamp(msg->header.stamp, now.get_clock_type());
+  std::vector<Obstacle> obstacles;
+  obstacles.reserve(msg->obstacles.size());
+  for (const auto & obstacle : msg->obstacles) {
+    const rclcpp::Time stamp(obstacle.stamp, now.get_clock_type());
+    const rclcpp::Time estimate_stamp =
+      (stamp.nanoseconds() == 0) ? header_stamp : stamp;
+    if (estimate_stamp.nanoseconds() == 0) {
+      continue;
+    }
+    // Single-obstacle staleness: drop it, keep the heartbeat valid.
+    const double age = std::max(0.0, (now - estimate_stamp).seconds());
+    if (age > obstacle_timeout_ || obstacle.radius <= 0.0) {
+      continue;
+    }
+    const Eigen::Vector2d velocity(obstacle.velocity.x, obstacle.velocity.y);
+    // The message reports the estimate at `stamp`; advance it to now so that
+    // MpcCore's tau=0 obstacle position is current.
+    const Eigen::Vector2d position(
+      obstacle.position.x + velocity.x() * age,
+      obstacle.position.y + velocity.y() * age);
+    obstacles.push_back(
+      Obstacle::circle(
+        static_cast<int>(obstacle.id), position, velocity,
+        static_cast<double>(obstacle.radius)));
+  }
+
   std::lock_guard<std::mutex> lock(obstacle_mutex_);
   has_valid_obstacle_msg_ = true;
   last_obstacle_received_ = now;
+  obstacles_ = std::move(obstacles);
+}
+
+void MpcController::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+{
+  if (!msg || msg->info.width == 0 || msg->info.height == 0 ||
+    msg->info.resolution <= 0.0)
+  {
+    return;
+  }
+  const std::size_t cells =
+    static_cast<std::size_t>(msg->info.width) * msg->info.height;
+  if (msg->data.size() != cells) {
+    RCLCPP_WARN(
+      logger_, "[%s] static map data size mismatch (%zu != %zu); ignored",
+      plugin_name_.c_str(), msg->data.size(), cells);
+    return;
+  }
+
+  std::vector<uint8_t> occupied(cells, 0);
+  for (std::size_t index = 0; index < cells; ++index) {
+    occupied[index] = msg->data[index] >= 50 ? 1 : 0;
+  }
+
+  auto field = std::make_shared<GridDistanceField>();
+  try {
+    field->build(
+      static_cast<int>(msg->info.width), static_cast<int>(msg->info.height),
+      msg->info.resolution, msg->info.origin.position.x, msg->info.origin.position.y,
+      occupied, static_field_max_distance_);
+  } catch (const std::exception & ex) {
+    RCLCPP_WARN(
+      logger_, "[%s] static distance field build failed: %s",
+      plugin_name_.c_str(), ex.what());
+    return;
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(field_mutex_);
+    static_field_ = std::move(field);
+    static_field_frame_ = msg->header.frame_id;
+  }
+  RCLCPP_INFO(
+    logger_, "[%s] static distance field built: %dx%d res=%.3f frame='%s'",
+    plugin_name_.c_str(), msg->info.width, msg->info.height, msg->info.resolution,
+    msg->header.frame_id.c_str());
 }
 
 bool MpcController::obstacleHeartbeatValid(const rclcpp::Time & now) const
@@ -338,55 +622,32 @@ bool MpcController::transformPlanToCostmap(
   return true;
 }
 
-bool MpcController::findLookaheadPoint(
-  const nav_msgs::msg::Path & plan,
-  const geometry_msgs::msg::Pose & robot_pose,
-  double & look_x, double & look_y) const
+bool MpcController::buildReference(const nav_msgs::msg::Path & plan) const
 {
-  const auto & poses = plan.poses;
-  if (poses.empty()) {
+  if (plan.poses.size() < 2) {
     return false;
   }
 
-  std::size_t nearest = 0;
-  double nearest_distance_sq = std::numeric_limits<double>::max();
-  for (std::size_t i = 0; i < poses.size(); ++i) {
-    const double dx = poses[i].pose.position.x - robot_pose.position.x;
-    const double dy = poses[i].pose.position.y - robot_pose.position.y;
-    const double distance_sq = dx * dx + dy * dy;
-    if (distance_sq < nearest_distance_sq) {
-      nearest_distance_sq = distance_sq;
-      nearest = i;
-    }
+  std::vector<Eigen::Vector2d> waypoints;
+  waypoints.reserve(plan.poses.size());
+  for (const auto & pose_stamped : plan.poses) {
+    waypoints.emplace_back(
+      pose_stamped.pose.position.x, pose_stamped.pose.position.y);
   }
 
-  if (nearest + 1 >= poses.size()) {
-    look_x = poses.back().pose.position.x;
-    look_y = poses.back().pose.position.y;
-    return true;
-  }
-
-  double remaining = lookahead_dist_;
-  for (std::size_t i = nearest; i + 1 < poses.size(); ++i) {
-    const double x0 = poses[i].pose.position.x;
-    const double y0 = poses[i].pose.position.y;
-    const double x1 = poses[i + 1].pose.position.x;
-    const double y1 = poses[i + 1].pose.position.y;
-    const double segment = std::hypot(x1 - x0, y1 - y0);
-    if (segment < 1e-9) {
-      continue;
+  try {
+    const double goal_yaw = tf2::getYaw(plan.poses.back().pose.orientation);
+    reference_ = std::make_unique<ReferencePath>(
+      waypoints, goal_yaw, v_ref_, mpc_config_.N, mpc_config_.dt);
+  } catch (const std::exception & ex) {
+    auto node = node_.lock();
+    if (node) {
+      RCLCPP_WARN_THROTTLE(
+        logger_, *node->get_clock(), 2000,
+        "[%s] reference construction failed: %s", plugin_name_.c_str(), ex.what());
     }
-    if (segment >= remaining) {
-      const double ratio = remaining / segment;
-      look_x = x0 + ratio * (x1 - x0);
-      look_y = y0 + ratio * (y1 - y0);
-      return true;
-    }
-    remaining -= segment;
+    return false;
   }
-
-  look_x = poses.back().pose.position.x;
-  look_y = poses.back().pose.position.y;
   return true;
 }
 

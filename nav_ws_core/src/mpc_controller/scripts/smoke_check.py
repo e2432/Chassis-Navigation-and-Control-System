@@ -8,6 +8,7 @@ import time
 
 import rclpy
 from geometry_msgs.msg import PoseStamped, Twist
+from mpc_controller.msg import MpcDiagnostics, ObstacleStateArray
 from nav2_msgs.action import FollowPath
 from nav2_msgs.msg import SpeedLimit
 from nav_msgs.msg import Path
@@ -28,6 +29,11 @@ class SmokeCheck(Node):
         self.declare_parameter("base_yaw_deg", 0.0)
         self.declare_parameter("tf_failure_expected", False)
         self.declare_parameter("map_odom_dynamic_seconds", 0.0)
+        self.declare_parameter("obstacle_source", "mock")
+        self.obstacle_source = str(self.get_parameter("obstacle_source").value)
+        self.declare_parameter("expect_static_field", False)
+        self.expect_static_field = bool(
+            self.get_parameter("expect_static_field").value)
         self.chassis_type = self.get_parameter("chassis_type").value
         self.map_frame = self.get_parameter("map_frame").value
         self.map_x = float(self.get_parameter("map_x").value)
@@ -45,8 +51,16 @@ class SmokeCheck(Node):
         self.last_vy = 0.0
         self.last_wz = 0.0
         self.cmd_count = 0
+        self.last_obstacle_count = 0
+        self.diagnostics_count = 0
+        self.last_solve_ms = 0.0
+        self.saw_static_field = False
 
         self.create_subscription(Twist, "/cmd_vel", self.cmd_cb, 10)
+        self.create_subscription(
+            ObstacleStateArray, "/mpc/obstacles", self.obstacles_cb, 10)
+        self.create_subscription(
+            MpcDiagnostics, "/mpc/diagnostics", self.diagnostics_cb, 50)
         self.speed_limit_pub = self.create_publisher(SpeedLimit, "/speed_limit", 10)
         self.action_client = ActionClient(self, FollowPath, "follow_path")
         self.mock_client = self.create_client(
@@ -60,6 +74,37 @@ class SmokeCheck(Node):
             self.last_wz = msg.angular.z
             self.last_planar = math.hypot(msg.linear.x, msg.linear.y)
             self.cmd_count += 1
+
+    def obstacles_cb(self, msg):
+        with self.lock:
+            self.last_obstacle_count = len(msg.obstacles)
+
+    def diagnostics_cb(self, msg):
+        with self.lock:
+            self.diagnostics_count += 1
+            self.last_solve_ms = float(msg.solve_ms)
+            self.saw_static_field = self.saw_static_field or bool(msg.static_field_used)
+
+    def check_diagnostics(self, timeout=5.0):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            with self.lock:
+                count = self.diagnostics_count
+                saw_field = self.saw_static_field
+            if count > 0 and (not self.expect_static_field or saw_field):
+                break
+            time.sleep(0.02)
+        with self.lock:
+            count = self.diagnostics_count
+            solve_ms = self.last_solve_ms
+            saw_field = self.saw_static_field
+        if count <= 0:
+            raise RuntimeError("no /mpc/diagnostics messages received")
+        if self.expect_static_field and not saw_field:
+            raise RuntimeError("static distance field was not used")
+        self.get_logger().info(
+            f"PASS diagnostics: n={count} last_solve_ms={solve_ms:.2f} "
+            f"static_field={saw_field}")
 
     def snapshot(self):
         with self.lock:
@@ -75,6 +120,8 @@ class SmokeCheck(Node):
         return future.result()
 
     def set_mock(self, enabled):
+        if self.obstacle_source != "mock":
+            return
         request = SetBool.Request()
         request.data = enabled
         result = self.wait_future(self.mock_client.call_async(request), 5.0)
@@ -191,8 +238,20 @@ class SmokeCheck(Node):
         msg.speed_limit = value
         return msg
 
-    def check_mode_output(self):
+    def check_mode_output(self, timeout=3.0):
+        # MPC respects the chassis acceleration limits, so the first non-zero
+        # command is a ramp value. Wait for the mode-specific steady state.
+        deadline = time.monotonic() + timeout
         planar, vx, vy, wz, _ = self.snapshot()
+        while time.monotonic() < deadline:
+            planar, vx, vy, wz, _ = self.snapshot()
+            if planar is not None:
+                if self.chassis_type == "diff":
+                    if abs(vy) <= 1e-6 and abs(wz) >= 0.1 and abs(vx) <= 0.2:
+                        break
+                elif vx > 0.1 and abs(vy) <= 0.05 and abs(wz) <= 0.05:
+                    break
+            time.sleep(0.02)
         if planar is None:
             raise RuntimeError("no /cmd_vel messages")
         if self.chassis_type == "diff":
@@ -214,13 +273,40 @@ class SmokeCheck(Node):
             self.get_logger().info(
                 f"PASS omni kinematics: vx={vx:.3f} vy={vy:.3f} wz={wz:.3f}")
 
+    def run_scenario_obstacle_check(self, timeout=10.0):
+        deadline = time.monotonic() + timeout
+        count = 0
+        while time.monotonic() < deadline:
+            with self.lock:
+                count = self.last_obstacle_count
+            if count > 0:
+                break
+            time.sleep(0.05)
+        if count <= 0:
+            raise RuntimeError("no non-empty /mpc/obstacles message received")
+        if not self.wait_nonzero(5.0):
+            raise RuntimeError("expected non-zero command with scenario obstacles")
+        self.check_mode_output(5.0)
+        self.check_diagnostics()
+        self.get_logger().info(
+            f"PASS non-empty obstacle message (n={count}) with non-zero command")
+        if self.goal_handle is not None:
+            self.goal_handle.cancel_goal_async()
+        return True
+
     def run(self):
         if not self.action_client.wait_for_server(timeout_sec=60.0):
             raise RuntimeError("action server /follow_path not available")
-        if not self.mock_client.wait_for_service(timeout_sec=30.0):
-            raise RuntimeError("mock heartbeat service not available")
+        if self.obstacle_source == "mock":
+            if not self.mock_client.wait_for_service(timeout_sec=30.0):
+                raise RuntimeError("mock heartbeat service not available")
+        elif self.tf_failure_expected:
+            raise RuntimeError("obstacle_source=scenario does not support TF-failure mode")
         self.send_goal()
         self.get_logger().info("FollowPath goal accepted")
+
+        if self.obstacle_source == "scenario":
+            return self.run_scenario_obstacle_check()
 
         if self.tf_failure_expected:
             # Missing map->odom: Nav2 may abort the goal before the plugin is
@@ -271,6 +357,7 @@ class SmokeCheck(Node):
             raise RuntimeError("expected non-zero command with valid heartbeat")
         self.get_logger().info("PASS non-zero command with valid heartbeat")
         self.check_mode_output()
+        self.check_diagnostics()
 
         self.set_mock(False)
         time.sleep(0.8)

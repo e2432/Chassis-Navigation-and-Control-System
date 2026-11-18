@@ -184,7 +184,10 @@ QpProblem MpcCore::buildQp(
   const Eigen::MatrixXd & ubar,
   const Eigen::MatrixXd & z_ref,
   const std::vector<Obstacle> & obstacles,
-  const Eigen::Vector3d & u_prev) const
+  const Eigen::Vector3d & u_prev,
+  const GridDistanceField * static_field,
+  const Eigen::Matrix2d & map_to_odom_rotation,
+  const Eigen::Vector2d & map_to_odom_translation) const
 {
   const int N = cfg_.N;
   const double dt = cfg_.dt;
@@ -196,8 +199,10 @@ QpProblem MpcCore::buildQp(
   }
 
   const int n_obs = static_cast<int>(obstacles.size());
+  const bool has_field = static_field != nullptr && !static_field->empty();
+  const int n_field = has_field ? 1 : 0;
   const int n_u = 3 * N;
-  const int n_s = cfg_.slack ? N * n_obs : 0;
+  const int n_s = cfg_.slack ? N * (n_obs + n_field) : 0;
   const int nx = n_u + n_s;
 
   // 1) LTV recursion: z_k = Xi_k U + xi_k.
@@ -258,8 +263,8 @@ QpProblem MpcCore::buildQp(
     f.tail(n_s).setConstant(cfg_.rho_slack);
   }
 
-  // 3) Constraints: box, rate, soft obstacle, slack >= 0.
-  const int m = 6 * N + N * n_obs + n_s;
+  // 3) Constraints: box, rate, soft obstacle + static field, slack >= 0.
+  const int m = 6 * N + N * n_obs + N * n_field + n_s;
   Eigen::MatrixXd A = Eigen::MatrixXd::Zero(m, nx);
   Eigen::VectorXd lower(m);
   Eigen::VectorXd upper(m);
@@ -306,6 +311,30 @@ QpProblem MpcCore::buildQp(
       }
       lower(row) = rhs;
       upper(row) = kInf;
+      ++row;
+    }
+    if (has_field) {
+      // The field is expressed in the map frame; query at the nominal pose
+      // projected into map, then rotate the gradient back to odom.
+      const Eigen::Vector2d p_map =
+        map_to_odom_rotation.transpose() * (p_hat - map_to_odom_translation);
+      double field_distance = 0.0;
+      Eigen::Vector2d field_gradient = Eigen::Vector2d::Zero();
+      if (static_field->sample(p_map, field_distance, field_gradient)) {
+        const Eigen::Vector2d grad_odom = map_to_odom_rotation * field_gradient;
+        const double clearance = field_distance - chassis_.radius;
+        const double rhs =
+          cfg_.d_safe - clearance + grad_odom.dot(p_hat - xi_b[k].head<2>());
+        A.row(row).head(n_u) = grad_odom.transpose() * xi_u[k].topRows(2);
+        if (n_s > 0) {
+          A(row, n_u + N * n_obs + (k - 1)) = 1.0;
+        }
+        lower(row) = rhs;
+        upper(row) = kInf;
+      } else {
+        lower(row) = -kInf;
+        upper(row) = kInf;
+      }
       ++row;
     }
   }
@@ -421,7 +450,10 @@ MpcResult MpcCore::solve(
   const Eigen::Vector3d & z0,
   const Eigen::MatrixXd & z_ref,
   const Eigen::MatrixXd & u_ref,
-  const std::vector<Obstacle> & obstacles)
+  const std::vector<Obstacle> & obstacles,
+  const GridDistanceField * static_field,
+  const Eigen::Matrix2d & map_to_odom_rotation,
+  const Eigen::Vector2d & map_to_odom_translation)
 {
   const int N = cfg_.N;
   if (z_ref.rows() != N + 1 || z_ref.cols() != 3 ||
@@ -439,7 +471,9 @@ MpcResult MpcCore::solve(
 
   for (int iteration = 0; iteration < n_sqp; ++iteration) {
     try {
-      const QpProblem qp = buildQp(z0, zbar, ubar, z_ref, obstacles, u_prev_);
+      const QpProblem qp = buildQp(
+        z0, zbar, ubar, z_ref, obstacles, u_prev_,
+        static_field, map_to_odom_rotation, map_to_odom_translation);
       result = solveQp(qp);
     } catch (const std::exception & ex) {
       result = QpSolution();
@@ -471,7 +505,9 @@ MpcResult MpcCore::solve(
     fallback_streak_ = 0;
     out.success = true;
     out.u = u_prev_;
-    const int n_s = cfg_.slack ? N * static_cast<int>(obstacles.size()) : 0;
+    const bool has_field = static_field != nullptr && !static_field->empty();
+    const int n_s = cfg_.slack ?
+      N * (static_cast<int>(obstacles.size()) + (has_field ? 1 : 0)) : 0;
     if (n_s > 0 && result.x.size() >= 3 * N + n_s) {
       out.max_slack = result.x.tail(n_s).maxCoeff();
     }
