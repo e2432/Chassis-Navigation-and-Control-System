@@ -1,0 +1,76 @@
+# 基线 DWA 参数 —— 9-1 §5.1 候选初始值（omni 主对比）
+#
+# 命名说明：基线在全套件里统一叫 `dwa`（runner.CONTROLLERS / launch BASELINES /
+# 成绩入库目录名），实现是 Nav2 的 `dwb_core::DWBLocalPlanner`（DWB 即 DWA 的
+# Nav2 实现）。**文件名必须与基线名一致**为 dwa.yaml，否则 launch 找不到参数文件。
+#
+# Round 0 之前这些数值**必须**由 M2 实际 YAML 覆盖；M2 未覆盖的项才保留 Nav2 官方默认。
+# 本文件为工程侧落地版（2026-11-14），Round 0 起每次改动记版本与 commit。
+controller_server:
+  ros__parameters:
+    use_sim_time: true
+    controller_frequency: 20.0
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.001   # 全向底盘：横移速度必须进里程计，不能用 0.5 当死区
+    min_theta_velocity_threshold: 0.001
+    progress_checker_plugins: ["progress_checker"]
+    goal_checker_plugins: ["general_goal_checker"]
+    controller_plugins: ["FollowPath"]
+
+    # progress_checker 段已删除：多控制器同栈时它是 server 级参数，唯一来源在
+    # nav2_baseline.launch.py 的 SHARED_CONTROLLER_PARAMS（礼让行人后 10 s→30 s）。
+    general_goal_checker:
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.18
+      yaw_goal_tolerance: 0.15
+      stateful: true
+
+    FollowPath:
+      plugin: "dwb_core::DWBLocalPlanner"
+      debug_trajectory_details: true
+      # ---- 速度/加速度（§5.1，固定，不在调参范围）----
+      max_vel_x: 0.6
+      max_vel_y: 0.6                   # diff 迁移置 0.0
+      max_speed_xy: 0.6                # DWB 原生平面合速度约束
+      min_vel_x: -0.6                  # 允许倒车（负向采样须实测生效）
+      min_vel_y: -0.6
+      min_speed_xy: 0.0                # 平移速度"模长"下界；负值没有物理意义
+      max_vel_theta: 1.5
+      min_speed_theta: 0.0
+      acc_lim_x: 1.0
+      acc_lim_y: 1.0
+      acc_lim_theta: 2.0
+      decel_lim_x: -1.0
+      decel_lim_y: -1.0
+      decel_lim_theta: -2.0
+      # ---- 采样 ----
+      vx_samples: 20
+      vy_samples: 20                   # 全向主对比：横移采样必须够密（5 时分辨率 0.24 m/s）
+      vtheta_samples: 20
+      sim_time: 1.7
+      linear_granularity: 0.05
+      angular_granularity: 0.025
+      transform_tolerance: 0.2
+      trans_stopped_velocity: 0.02      # 原值 0.25 对 0.6 m/s 底盘 = 42% 速度就判"停住"，
+                                        # 会误触发 RotateToGoal/Oscillation 锁死（2026-11-14 实测）
+      short_circuit_trajectory_evaluation: true
+      stateful: true
+      # ---- critics（不删安全 critic）----
+      # RotateToGoal / Oscillation 先移出：全向底盘在走廊里被这两个 critic 锁死后
+      # 会"原地微转、平移恒 0"直到 progress_checker 报失败（2026-11-14 实测 x≈4.5/6.1/7.96 三次）。
+      # Round 0 的调参项之一就是逐步把它们加回来并观察是否复发。
+      # A/B A3（2026-11-15）：把 RotateToGoal 加回（Oscillation 仍关闭）。
+      # 依据：工作集里 DWA 的 other 失败多数是"走完全程却没进公差"（路径长 7.5~12 m、
+      # 到达 None），符合"缺了 RotateToGoal 导致最后一段不收敛"。之前把这个 critic
+      # 移出是因为全向底盘会被它锁死，所以先把 scale 从原 32 降到 16 观察是否复发。
+      critics: ["RotateToGoal", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
+      BaseObstacle.scale: 0.5           # 原 0.02 相对 PathDist 32 几乎不起作用，等于不避障
+      PathAlign.scale: 32.0
+      PathAlign.forward_point_distance: 0.1
+      PathDist.scale: 32.0
+      GoalAlign.scale: 24.0
+      GoalDist.scale: 24.0
+      GoalAlign.forward_point_distance: 0.1
+      RotateToGoal.scale: 16.0
+      RotateToGoal.slowing_factor: 5.0
+      RotateToGoal.lookahead_time: -1.0

@@ -1,0 +1,222 @@
+{
+  "per_scenario": {
+    "static_avoid": {
+      "runs": 20,
+      "success_rate": 0.9,
+      "time_to_goal_s_median": 18.25,
+      "path_length_m_median": 10.8459,
+      "smoothness_median": 16.5453,
+      "min_clearance_m_median": 0.2775,
+      "min_clearance_m_worst": 0.2098,
+      "estop_count_total": 0,
+      "controllers": [
+        "teb"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "dynamic_pedestrian": {
+      "runs": 20,
+      "success_rate": 1.0,
+      "time_to_goal_s_median": 29.3666,
+      "path_length_m_median": 15.7319,
+      "smoothness_median": 45.4926,
+      "min_clearance_m_median": 0.9728,
+      "min_clearance_m_worst": 0.6224,
+      "estop_count_total": 0,
+      "controllers": [
+        "teb"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "narrow_passage": {
+      "runs": 20,
+      "success_rate": 0.8,
+      "time_to_goal_s_median": 19.9167,
+      "path_length_m_median": 11.7941,
+      "smoothness_median": 12.2343,
+      "min_clearance_m_median": 0.3412,
+      "min_clearance_m_worst": 0.2632,
+      "estop_count_total": 5,
+      "controllers": [
+        "teb"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "dead_end": {
+      "runs": 20,
+      "success_rate": 0.85,
+      "time_to_goal_s_median": 20.7167,
+      "path_length_m_median": 12.3037,
+      "smoothness_median": 16.4606,
+      "min_clearance_m_median": 0.3013,
+      "min_clearance_m_worst": 0.2214,
+      "estop_count_total": 5,
+      "controllers": [
+        "teb"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    },
+    "mixed": {
+      "runs": 20,
+      "success_rate": 0.7,
+      "time_to_goal_s_median": 32.9,
+      "path_length_m_median": 18.089,
+      "smoothness_median": 49.934,
+      "min_clearance_m_median": 0.2037,
+      "min_clearance_m_worst": -0.0283,
+      "estop_count_total": 5,
+      "controllers": [
+        "teb"
+      ],
+      "backends": [
+        "nav2"
+      ]
+    }
+  },
+  "dynamic_stress": 0.85,
+  "anomalies": [
+    {
+      "scenario": "static_avoid",
+      "seed": 107,
+      "run": 7,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 0.2098,
+      "t_end_s": 50.0833
+    },
+    {
+      "scenario": "static_avoid",
+      "seed": 118,
+      "run": 18,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 0.2306,
+      "t_end_s": 40.9333
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 306,
+      "run": 6,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 3.0718,
+      "t_end_s": 30.75
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 311,
+      "run": 11,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 4.5119,
+      "t_end_s": 30.75
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 316,
+      "run": 16,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 0.2708,
+      "t_end_s": 42.35
+    },
+    {
+      "scenario": "narrow_passage",
+      "seed": 318,
+      "run": 18,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 0.3736,
+      "t_end_s": 42.8833
+    },
+    {
+      "scenario": "dead_end",
+      "seed": 409,
+      "run": 9,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 0.3237,
+      "t_end_s": 48.1167
+    },
+    {
+      "scenario": "dead_end",
+      "seed": 410,
+      "run": 10,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 0.3292,
+      "t_end_s": 40.5667
+    },
+    {
+      "scenario": "dead_end",
+      "seed": 416,
+      "run": 16,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 2.5609,
+      "t_end_s": 30.75
+    },
+    {
+      "scenario": "mixed",
+      "seed": 502,
+      "run": 2,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.014,
+      "t_end_s": 40.25
+    },
+    {
+      "scenario": "mixed",
+      "seed": 505,
+      "run": 5,
+      "controller": "teb",
+      "failure_class": "timeout",
+      "min_clearance_m": 0.2411,
+      "t_end_s": 75.5
+    },
+    {
+      "scenario": "mixed",
+      "seed": 512,
+      "run": 12,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 0.2464,
+      "t_end_s": 54.1167
+    },
+    {
+      "scenario": "mixed",
+      "seed": 514,
+      "run": 14,
+      "controller": "teb",
+      "failure_class": "other",
+      "min_clearance_m": 0.0154,
+      "t_end_s": 50.7167
+    },
+    {
+      "scenario": "mixed",
+      "seed": 516,
+      "run": 16,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.0283,
+      "t_end_s": 42.8834
+    },
+    {
+      "scenario": "mixed",
+      "seed": 520,
+      "run": 20,
+      "controller": "teb",
+      "failure_class": "collision",
+      "min_clearance_m": -0.0066,
+      "t_end_s": 44.8834
+    }
+  ]
+}

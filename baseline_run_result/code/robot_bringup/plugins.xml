@@ -1,0 +1,10 @@
+<library path="ped_corridor_layer">
+  <class name="robot_bringup::PedCorridorLayer" type="robot_bringup::PedCorridorLayer"
+         base_class_type="nav2_costmap_2d::Layer">
+    <description>行人横穿走廊注入层：自己记录写过的格子，每拍先恢复再重写（9-3）</description>
+  </class>
+  <class name="robot_bringup::EmptyProbeLayer" type="robot_bringup::EmptyProbeLayer"
+         base_class_type="nav2_costmap_2d::Layer">
+    <description>对照实验：完全空实现，用来验证"多挂一层"本身的影响</description>
+  </class>
+</library>
