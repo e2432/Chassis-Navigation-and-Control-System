@@ -25,10 +25,11 @@ controller_server:
       type: "omni"                  # omni | mecanum | diff
       footprint:
         radius: 0.30
+      # 正式 A 口径与三基线一致用 0.6；契约 task 上限 1.0 只作硬上限。
       limits:
-        v_max: 1.0
-        v_min: -1.0
-        vy_max: 1.0
+        v_max: 0.6
+        v_min: -0.6
+        vy_max: 0.6
         omega_max: 1.5
         acc_max: 1.0
         alpha_max: 2.0
@@ -57,6 +58,10 @@ controller_server:
         max_iter: 10000
         slack: true
         terminal: true
+      # 静态距离场来源：开发默认 /map；正式 A 口径由
+      # robot_bringup/config/baselines/mpc.yaml 设为 local_costmap + /debug/static_local_grid。
+      static_field_source: "map"
+      static_field_topic: ""
       # D3 动态障碍心跳失联阈值（s，ROS 时钟）
       obstacle_timeout: 0.5
       # 全局路径 -> 局部 costmap 帧的 TF 查询超时（s）

@@ -1,0 +1,17 @@
+scenario: static_avoid
+description: 起终点直线 10 m，航线附近 4~6 个静态圆障碍，需绕行
+timeout_s: 60
+corridor_length_m:
+- 9.5
+- 10.5
+corridor_half_width_m: 2.6
+obstacle_count:
+- 4
+- 6
+obstacle_radius_m:
+- 0.3
+- 0.6
+lateral_offset_m: 1.5
+obstacle_x_range_m:
+- 2.0
+- 1.5

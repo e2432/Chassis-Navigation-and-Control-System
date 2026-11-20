@@ -1,0 +1,79 @@
+# 基线/自研 MPC 控制器参数（mpc_controller::MpcController）
+#
+# 定位说明：`mpc_controller` 是**自研方法方**，不进"DWA/MPPI/TEB 三基线对比表"，
+# 但必须走**同一套**共享执行层与评分口径，才能和基线同表比较（9-1 §2、§9 分工）。
+#
+# 当前状态（2026-11-14）：本机工作区路径含中文会导致 rosidl 生成接口失败，
+# 所以 mpc_controller 用 `nav_ws_core/scripts/build_mpc_ascii.sh` 构建到
+# ~/mpc_build_ws（ASCII 路径）。启动前必须先 `source ~/mpc_build_ws/install/setup.bash`，
+# 否则 Nav2 的 pluginlib 找不到 mpc_controller::MpcController。
+# 根因与长期方案见 docs/与算法侧沟通_MPC构建.md。
+#
+# 重要：本文件**只覆盖 controller_server**，不覆盖 local_costmap / global_costmap。
+# 共享代价地图（点云 voxel 层 + 静态清单几何 + 全向 footprint）一律来自
+# nav2_common.yaml，四个控制器必须完全一致。
+controller_server:
+  ros__parameters:
+    use_sim_time: true
+    controller_frequency: 20.0
+    # 全向底盘：横移速度必须进里程计（0.5 会把横移全当 0，见 9-1 台账 §G.2 #5）
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.001
+    min_theta_velocity_threshold: 0.001
+    progress_checker_plugins: ["progress_checker"]
+    goal_checker_plugins: ["general_goal_checker"]
+    controller_plugins: ["FollowPath"]
+
+    # progress_checker 段已删除：多控制器同栈时它是 server 级参数，唯一来源在
+    # nav2_baseline.launch.py 的 SHARED_CONTROLLER_PARAMS（礼让行人后 10 s→30 s）。
+    general_goal_checker:
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.18
+      yaw_goal_tolerance: 0.15
+      stateful: true
+
+    FollowPath:
+      plugin: "mpc_controller::MpcController"
+      type: "omni"                      # omni | mecanum | diff
+      footprint:
+        radius: 0.30
+      # 速度/加速度上限按契约常量给（执行层还会再限一次，两层都合规）
+      limits:
+        v_max: 0.6
+        v_min: -0.6
+        vy_max: 0.6
+        omega_max: 1.5
+        acc_max: 1.0
+        alpha_max: 2.0
+      # ------------------------------------------------------------------
+      # W6 真 MPC 参数（E-P0-2 / A-P0-1，2026-11-20 与算法侧对齐）
+      # 权威来源是算法侧 `mpc_controller/config/nav2_mpc_params.yaml` 的
+      # `FollowPath.mpc.*`；本段按算法侧 A-P0-1 描述的值写入，**合入他们的包后
+      # 必须逐项 diff 一次**（不一致时以他们那份为准，只改 YAML 不改 launch）。
+      # 注意：这些只加在 FollowPath 下；server 级参数（频率/patience/两个 checker）
+      # 唯一来源仍是 nav2_baseline.launch.py 的 SHARED_CONTROLLER_PARAMS。
+      # ------------------------------------------------------------------
+      mpc:
+        N: 40                      # 预测步数
+        dt: 0.05                   # 步长 s（20 Hz）
+        v_ref: 0.6                 # 参考速度 m/s（契约上限）
+        d_safe: 0.30               # 障碍安全距离 m
+        n_sqp: 2                   # SQP 迭代次数
+        eps: 0.001                 # 收敛阈值
+        max_iter: 10000            # QP 最大迭代
+        slack: true                # 软约束（slack 变量）
+        terminal: true             # 终端代价
+        q_long: 0.4                # 纵向权重（q_ratio = q_long / q_lat = 0.1）
+        q_lat: 4.0                 # 横向权重
+        # 静态距离场来源（算法侧 G6 / A-P0-3a）：
+        #   local_costmap = 正式 A 口径，用 /debug/static_local_grid 的**纯静态**栅格建 EDT；
+        #   map           = 开发/兜底，用 /map 的 chamfer EDT。
+        static_field_source: "local_costmap"
+        static_field_topic: "/debug/static_local_grid"
+      # 当前仓库里的插件是 D2 直通跟随器（拿到 W6 插件后 mpc.* 生效，下面几项保留兜底）
+      desired_linear_vel: 0.6
+      lookahead_dist: 0.5
+      rotation_gain: 2.0
+      # 动态障碍心跳失联阈值（s）：模拟心跳由 mock_obstacle_heartbeat.py 提供
+      obstacle_timeout: 0.5
+      transform_tolerance: 0.2

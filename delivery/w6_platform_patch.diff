@@ -1,0 +1,100 @@
+--- a/src/robot_bringup/config/baselines/mpc.yaml
++++ b/src/robot_bringup/config/baselines/mpc.yaml
+@@ -56,20 +56,28 @@
+       mpc:
+         N: 40                      # 预测步数
+         dt: 0.05                   # 步长 s（20 Hz）
+-        v_ref: 0.6                 # 参考速度 m/s（契约上限）
++        v_ref: 0.6                 # 参考速度 m/s（与三基线 0.6 同速）
++        q_lat: 4.0                 # 横向权重
++        q_long: 0.4                # 纵向权重（q_ratio = q_long / q_lat = 0.1）
++        q_theta: 1.5               # 航向权重
++        r_v: 0.05                  # 线速度代价
++        r_omega: 0.02              # 角速度代价
++        r_dv: 0.20                 # 线加速度代价
++        r_domega: 0.10             # 角加速度代价
++        terminal_factor: 2.0       # 终端代价倍率
++        rho_slack: 80.0            # slack 罚因子
+         d_safe: 0.30               # 障碍安全距离 m
+         n_sqp: 2                   # SQP 迭代次数
+-        eps: 0.001                 # 收敛阈值
++        eps_abs: 1.0e-3            # OSQP 绝对收敛阈值
++        eps_rel: 1.0e-3            # OSQP 相对收敛阈值
+         max_iter: 10000            # QP 最大迭代
+         slack: true                # 软约束（slack 变量）
+         terminal: true             # 终端代价
+-        q_long: 0.4                # 纵向权重（q_ratio = q_long / q_lat = 0.1）
+-        q_lat: 4.0                 # 横向权重
+-        # 静态距离场来源（算法侧 G6 / A-P0-3a）：
+-        #   local_costmap = 正式 A 口径，用 /debug/static_local_grid 的**纯静态**栅格建 EDT；
+-        #   map           = 开发/兜底，用 /map 的 chamfer EDT。
+-        static_field_source: "local_costmap"
+-        static_field_topic: "/debug/static_local_grid"
++      # 静态距离场来源（算法侧 G6 / A-P0-3a，FollowPath 级参数，不要缩进到 mpc 下）：
++      #   local_costmap = 正式 A 口径，用 /debug/static_local_grid 的**纯静态**栅格建 EDT；
++      #   map           = 开发/兜底，用 /map 的 chamfer EDT。
++      static_field_source: "local_costmap"
++      static_field_topic: "/debug/static_local_grid"
+       # 当前仓库里的插件是 D2 直通跟随器（拿到 W6 插件后 mpc.* 生效，下面几项保留兜底）
+       desired_linear_vel: 0.6
+       lookahead_dist: 0.5
+--- a/src/robot_bringup/launch/simulation.launch.py
++++ b/src/robot_bringup/launch/simulation.launch.py
+@@ -33,6 +33,8 @@
+     log_level = LaunchConfiguration("log_level")
+     controllers = LaunchConfiguration("controllers")
+     map_yaml = LaunchConfiguration("map")
++    mock_obstacles = LaunchConfiguration("mock_obstacles")
++    static_local_grid = LaunchConfiguration("static_local_grid")
+ 
+     bridge = [FindPackageShare("robot_sim"), "/scripts/isaac_sim_bridge.py"]
+     desc_share = FindPackageShare("robot_description")
+@@ -75,6 +77,12 @@
+                                               "多个控制器注册在同一 controller_server 上，按 baseline 名选"),
+             DeclareLaunchArgument("log_level", default_value="info",
+                                   description="传给 Nav2 controller_server 的日志级别（排查用 debug）"),
++            DeclareLaunchArgument("mock_obstacles", default_value="true",
++                                  description="转发给 nav2_baseline：baseline:=mpc 时是否起空数组心跳；"
++                                              "正式 feeder 在场时必须 false"),
++            DeclareLaunchArgument("static_local_grid", default_value="false",
++                                  description="转发给 nav2_baseline：是否起 /debug/static_local_grid"
++                                              "（局部纯静态栅格，供 MPC 建 EDT）"),
+             DeclareLaunchArgument("nav2_delay", default_value="30.0",
+                                   description="Isaac 起来后再等多少秒启动 Nav2。实测 Isaac 冷启动 7~12 s，"
+                                               "过早启动会让 controller_server 的 change_state 超时"
+@@ -148,7 +156,9 @@
+                         launch_arguments={"baseline": nav2, "use_sim_time": use_sim_time,
+                                           "log_level": log_level,
+                                           "controllers": controllers,
+-                                          "map": map_yaml}.items(),
++                                          "map": map_yaml,
++                                          "mock_obstacles": mock_obstacles,
++                                          "static_local_grid": static_local_grid}.items(),
+                         condition=IfCondition(nav2_on),
+                     )
+                 ],
+--- a/scripts/run_workset.py
++++ b/scripts/run_workset.py
+@@ -26,8 +26,9 @@
+ from pathlib import Path
+ 
+ SCENARIOS = ("static_avoid", "dynamic_pedestrian", "narrow_passage", "dead_end", "mixed")
+-# mpc = 自研 MPC（Nav2 控制器 id=mpc，落盘 controller=mpc_cpp）；默认集仍是三个基线
+-BASELINES = ("dwa", "mppi", "teb", "mpc")
++# mpc = 自研 MPC（Nav2 控制器 id=mpc，落盘 controller=mpc_cpp）。默认只跑三个基线；
++# 需要 mpc 时显式传 `--baselines mpc`（或把它加进逗号列表），避免误把 W6 接驳面混进基线批量。
++BASELINES = ("dwa", "mppi", "teb")
+ 
+ 
+ def log(msg: str) -> None:
+@@ -149,7 +150,9 @@
+                "demo:=false", "rviz:=false", "duration:=0", "scene:=%s" % usda,
+                # 算法侧 G5：feeder 在场时必须关掉 launch 的空数组心跳，
+                # 否则 /mpc/obstacles 有两个发布者（采集器会直接判"套件不唯一"）
+-               "mock_obstacles:=%s" % ("false" if use_feeder else "true")]
++               "mock_obstacles:=%s" % ("false" if use_feeder else "true"),
++               # 算法侧 G6/A-P0-3a：mpc 需要 /debug/static_local_grid 建 EDT
++               "static_local_grid:=%s" % ("true" if "mpc" in args.baselines else "false")]
+         with open(stack_log, "wb") as fh:
+             proc = subprocess.Popen(cmd, cwd=str(nav_ws), stdout=fh, stderr=subprocess.STDOUT,
+                                     start_new_session=True)
