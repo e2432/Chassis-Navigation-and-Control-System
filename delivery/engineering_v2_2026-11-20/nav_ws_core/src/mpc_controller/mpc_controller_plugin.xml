@@ -1,0 +1,7 @@
+<class_libraries>
+  <library path="mpc_controller">
+    <class type="mpc_controller::MpcController" base_class_type="nav2_core::Controller">
+      <description>MPC controller skeleton (W5 D1; real algorithm arrives in W6)</description>
+    </class>
+  </library>
+</class_libraries>

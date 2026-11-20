@@ -98,7 +98,8 @@ private:
   std::vector<Obstacle> obstacles_;
   double obstacle_timeout_{0.5};
 
-  // W6 static distance field from the frozen static map (/map).
+  // W6 static distance field: `/map` (transient_local) or the rolling
+  // `/debug/static_local_grid` window (volatile, 10 Hz). A 口径 uses the latter.
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
   rclcpp::Publisher<mpc_controller::msg::MpcDiagnostics>::SharedPtr diagnostics_pub_;
   mutable std::mutex field_mutex_;
@@ -107,6 +108,8 @@ private:
   bool use_static_distance_field_{true};
   double static_field_max_distance_{5.0};
   std::string static_map_topic_{"/map"};
+  std::string static_field_source_{"map"};
+  std::string static_field_topic_{"/map"};
   std::string diagnostics_topic_{"/mpc/diagnostics"};
 
   double speed_limit_{0.0};  // nav2_costmap_2d::NO_SPEED_LIMIT

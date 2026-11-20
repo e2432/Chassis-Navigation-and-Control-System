@@ -43,11 +43,11 @@ void MpcController::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, prefix + "footprint.radius", rclcpp::ParameterValue(0.30));
   nav2_util::declare_parameter_if_not_declared(
-    node, prefix + "limits.v_max", rclcpp::ParameterValue(1.0));
+    node, prefix + "limits.v_max", rclcpp::ParameterValue(0.6));
   nav2_util::declare_parameter_if_not_declared(
-    node, prefix + "limits.v_min", rclcpp::ParameterValue(-1.0));
+    node, prefix + "limits.v_min", rclcpp::ParameterValue(-0.6));
   nav2_util::declare_parameter_if_not_declared(
-    node, prefix + "limits.vy_max", rclcpp::ParameterValue(1.0));
+    node, prefix + "limits.vy_max", rclcpp::ParameterValue(0.6));
   nav2_util::declare_parameter_if_not_declared(
     node, prefix + "limits.omega_max", rclcpp::ParameterValue(1.5));
   nav2_util::declare_parameter_if_not_declared(
@@ -91,6 +91,8 @@ void MpcController::configure(
   declare("mpc.terminal", rclcpp::ParameterValue(true));
   declare("use_static_distance_field", rclcpp::ParameterValue(true));
   declare("static_map_topic", rclcpp::ParameterValue("/map"));
+  declare("static_field_source", rclcpp::ParameterValue("map"));
+  declare("static_field_topic", rclcpp::ParameterValue(""));
   declare("static_field_max_distance", rclcpp::ParameterValue(5.0));
   declare("diagnostics_topic", rclcpp::ParameterValue("/mpc/diagnostics"));
 
@@ -132,6 +134,17 @@ void MpcController::configure(
   use_static_distance_field_ =
     node->get_parameter(prefix + "use_static_distance_field").as_bool();
   static_map_topic_ = node->get_parameter(prefix + "static_map_topic").as_string();
+  static_field_source_ = node->get_parameter(prefix + "static_field_source").as_string();
+  static_field_topic_ = node->get_parameter(prefix + "static_field_topic").as_string();
+  if (static_field_source_ != "map" && static_field_source_ != "local_costmap") {
+    throw std::runtime_error(
+      "MpcController: static_field_source must be 'map' or 'local_costmap', got '" +
+      static_field_source_ + "'");
+  }
+  if (static_field_topic_.empty()) {
+    static_field_topic_ = static_field_source_ == "local_costmap" ?
+      "/debug/static_local_grid" : static_map_topic_;
+  }
   static_field_max_distance_ =
     node->get_parameter(prefix + "static_field_max_distance").as_double();
   diagnostics_topic_ = node->get_parameter(prefix + "diagnostics_topic").as_string();
@@ -177,8 +190,13 @@ void MpcController::configure(
     node->create_publisher<mpc_controller::msg::MpcDiagnostics>(
     diagnostics_topic_, rclcpp::QoS(10));
   if (use_static_distance_field_) {
+    // `/map` is latched (transient_local); the rolling local window is 10 Hz volatile.
+    // A transient_local subscription cannot receive from a volatile publisher.
+    const auto static_qos = static_field_source_ == "local_costmap" ?
+      rclcpp::QoS(1).reliable() :
+      rclcpp::QoS(1).transient_local().reliable();
     map_sub_ = node->create_subscription<nav_msgs::msg::OccupancyGrid>(
-      static_map_topic_, rclcpp::QoS(1).transient_local().reliable(),
+      static_field_topic_, static_qos,
       std::bind(&MpcController::mapCallback, this, std::placeholders::_1));
   }
 
@@ -203,9 +221,11 @@ void MpcController::configure(
     mpc_config_.max_iter);
   RCLCPP_INFO(
     logger_,
-    "[%s] static distance field=%d topic='%s' max=%.2f; diagnostics topic='%s'",
+    "[%s] static distance field=%d source='%s' topic='%s' max=%.2f; "
+    "diagnostics topic='%s'",
     plugin_name_.c_str(), static_cast<int>(use_static_distance_field_),
-    static_map_topic_.c_str(), static_field_max_distance_, diagnostics_topic_.c_str());
+    static_field_source_.c_str(), static_field_topic_.c_str(),
+    static_field_max_distance_, diagnostics_topic_.c_str());
 }
 
 void MpcController::cleanup()
@@ -540,7 +560,9 @@ void MpcController::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr ms
 
   std::vector<uint8_t> occupied(cells, 0);
   for (std::size_t index = 0; index < cells; ++index) {
-    occupied[index] = msg->data[index] >= 50 ? 1 : 0;
+    // Unknown (-1) is conservative-occupied; otherwise the rolling local window
+    // edge would be treated as free space.
+    occupied[index] = (msg->data[index] < 0 || msg->data[index] >= 50) ? 1 : 0;
   }
 
   auto field = std::make_shared<GridDistanceField>();
@@ -561,7 +583,8 @@ void MpcController::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr ms
     static_field_ = std::move(field);
     static_field_frame_ = msg->header.frame_id;
   }
-  RCLCPP_INFO(
+  // 10 Hz local grids would flood INFO; keep this on the debug channel.
+  RCLCPP_DEBUG(
     logger_, "[%s] static distance field built: %dx%d res=%.3f frame='%s'",
     plugin_name_.c_str(), msg->info.width, msg->info.height, msg->info.resolution,
     msg->header.frame_id.c_str());

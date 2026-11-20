@@ -1,6 +1,7 @@
 .claude/
 .vscode/
 __pycache__/
+.pytest_cache/
 *.pyc
 
 # colcon build artifacts
@@ -11,3 +12,6 @@ nav_ws_core/log/
 # vendored OSQP generates these into its source tree at configure time
 nav_ws_core/src/mpc_controller/third_party/osqp/include/osqp_configure.h
 nav_ws_core/src/mpc_controller/third_party/osqp/lin_sys/direct/qdldl/qdldl_sources/include/qdldl_types.h
+
+# W6 integration workspace (local; rebuild from delivery/ + G9 tarball)
+w6_workspace/
