@@ -1,0 +1,3 @@
+{
+  "test/test_judge.py::test_nav2_backend_fails_loudly": true
+}
